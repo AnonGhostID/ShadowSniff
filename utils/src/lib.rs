@@ -4,6 +4,7 @@
 
 extern crate alloc;
 
+use alloc::string::String;
 use alloc::vec::Vec;
 use core::iter::once;
 use windows_sys::Win32::System::Performance::{QueryPerformanceCounter, QueryPerformanceFrequency};
@@ -15,6 +16,8 @@ pub mod process;
 pub mod base64;
 pub mod browsers;
 pub mod random;
+
+const FLAG_MAGIC_NUMBER: u32 = 0x1F1E6 /* 🇦 */ - 'A' as u32;
 
 pub trait WideString {
     fn to_wide(&self) -> Vec<u16>;
@@ -47,4 +50,21 @@ pub fn get_time_nanoseconds() -> u128 {
 
         (counter as u128 * 1_000_000_000u128) / freq as u128
     }
+}
+
+pub fn internal_code_to_flag<S>(code: &S) -> Option<String>
+where 
+    S: AsRef<str>
+{
+    let mut flag = String::new();
+
+    for ch in code.as_ref().trim().to_uppercase().chars() {
+        if let Some(c) = char::from_u32(ch as u32 + FLAG_MAGIC_NUMBER) {
+            flag.push(c);
+        } else {
+            return None;
+        }
+    }
+
+    Some(flag)
 }
