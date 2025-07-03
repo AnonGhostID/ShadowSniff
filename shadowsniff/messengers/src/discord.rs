@@ -169,8 +169,6 @@ struct TokenInfo {
     mfa: bool,
     phone: Option<String>,
     email: Option<String>,
-    flags: u32,
-    public_flags: u32,
 }
 
 impl Display for TokenInfo {
@@ -211,7 +209,5 @@ fn get_token_info(token: String) -> Option<TokenInfo> {
         mfa: *json.get("mfa_enabled")?.as_bool()?,
         phone: json.get("phone")?.as_string().map(|s| s.to_owned()),
         email: json.get("email")?.as_string().map(|s| s.to_owned()),
-        flags: *json.get("flags")?.as_number()? as u32,
-        public_flags: *json.get("public_flags")?.as_number()? as u32,
     })
 }

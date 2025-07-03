@@ -430,14 +430,6 @@ fn get_ep_rva(pe_buffer: PByte) -> u32 {
     image_pe_header_field!(pe_buffer, OptionalHeader.AddressOfEntryPoint)
 }
 
-fn get_image_import_data_dir(pe_buffer: PByte) -> (*const IMAGE_IMPORT_DESCRIPTOR, u32) {
-    let dir = image_pe_header_field!(pe_buffer, OptionalHeader.DataDirectory)
-        [IMAGE_DIRECTORY_ENTRY_IMPORT as usize];
-    let desc =
-        unsafe { pe_buffer.add(dir.VirtualAddress as usize) } as *const IMAGE_IMPORT_DESCRIPTOR;
-    (desc, dir.Size)
-}
-
 fn redirect_ep(loaded_pe: PByte, loaded_base: PVoid, pi: &PROCESS_INFORMATION) -> bool {
     let ep = get_ep_rva(loaded_pe);
     let ep_va = (loaded_base as u64 as usize).wrapping_add(ep as usize) as u64;
