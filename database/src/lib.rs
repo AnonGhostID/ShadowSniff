@@ -14,7 +14,7 @@ pub enum Value {
     Integer(i64),
     Float(f64),
     Blob(Vec<u8>),
-    Null
+    Null,
 }
 
 impl Value {
@@ -93,7 +93,7 @@ pub trait TableRecord {
 }
 
 pub enum Databases {
-    Sqlite
+    Sqlite,
 }
 
 impl Databases {

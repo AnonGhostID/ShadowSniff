@@ -1,4 +1,10 @@
-use crate::bindings::sqlite3_bindings::{sqlite3, sqlite3_close, sqlite3_column_blob, sqlite3_column_bytes, sqlite3_column_count, sqlite3_column_double, sqlite3_column_int64, sqlite3_column_text, sqlite3_column_type, sqlite3_deserialize, sqlite3_finalize, sqlite3_initialize, sqlite3_open, sqlite3_prepare_v2, sqlite3_step, sqlite3_stmt, SQLITE_BLOB, SQLITE_DESERIALIZE_RESIZEABLE, SQLITE_FLOAT, SQLITE_INTEGER, SQLITE_NULL, SQLITE_ROW, SQLITE_TEXT};
+use crate::bindings::sqlite3_bindings::{
+    SQLITE_BLOB, SQLITE_DESERIALIZE_RESIZEABLE, SQLITE_FLOAT, SQLITE_INTEGER, SQLITE_NULL,
+    SQLITE_ROW, SQLITE_TEXT, sqlite3, sqlite3_close, sqlite3_column_blob, sqlite3_column_bytes,
+    sqlite3_column_count, sqlite3_column_double, sqlite3_column_int64, sqlite3_column_text,
+    sqlite3_column_type, sqlite3_deserialize, sqlite3_finalize, sqlite3_initialize, sqlite3_open,
+    sqlite3_prepare_v2, sqlite3_step, sqlite3_stmt,
+};
 use crate::{DatabaseReader, TableRecord, Value};
 use alloc::boxed::Box;
 use alloc::format;
@@ -12,40 +18,32 @@ use utils::path::Path;
 mod sqlite3_bindings;
 
 pub(crate) struct Sqlite3BindingsReader {
-    db: *mut sqlite3
+    db: *mut sqlite3,
 }
 
 impl Sqlite3BindingsReader {
     pub fn new_from_file(db_path: &Path) -> Result<Self, i32> {
         let c_path = CString::new(db_path);
-        
+
         unsafe {
             sqlite3_initialize();
         }
-        
+
         let mut db: *mut sqlite3 = null_mut();
-        let rc = unsafe {
-            sqlite3_open(c_path.as_ptr(), &mut db)
-        };
-        
-        if rc != 0 {
-            Err(rc)
-        } else {
-            Ok(Self { db })
-        }
+        let rc = unsafe { sqlite3_open(c_path.as_ptr(), &mut db) };
+
+        if rc != 0 { Err(rc) } else { Ok(Self { db }) }
     }
-    
+
     pub fn new_from_bytes(db_bytes: &[u8]) -> Result<Self, i32> {
         let mut db: *mut sqlite3 = null_mut();
 
         unsafe {
             sqlite3_initialize();
         }
-        
-        let rc = unsafe {
-            sqlite3_open(":memory:\0".as_ptr() as *const i8, &mut db)
-        };
-        
+
+        let rc = unsafe { sqlite3_open(":memory:\0".as_ptr() as *const i8, &mut db) };
+
         if rc != 0 {
             return Err(rc);
         }
@@ -53,7 +51,7 @@ impl Sqlite3BindingsReader {
         let data_size = db_bytes.len();
         let data = db_bytes.to_vec().into_boxed_slice();
         let data_ptr = Box::into_raw(data) as *mut u8;
-        
+
         let rc = unsafe {
             sqlite3_deserialize(
                 db,
@@ -61,14 +59,14 @@ impl Sqlite3BindingsReader {
                 data_ptr,
                 data_size as i64,
                 data_size as i64,
-                SQLITE_DESERIALIZE_RESIZEABLE
+                SQLITE_DESERIALIZE_RESIZEABLE,
             )
         };
-        
+
         if rc != 0 {
             return Err(rc);
         }
-        
+
         Ok(Self { db })
     }
 }
@@ -76,7 +74,7 @@ impl Sqlite3BindingsReader {
 impl Drop for Sqlite3BindingsReader {
     fn drop(&mut self) {
         unsafe {
-            sqlite3_close(self.db); 
+            sqlite3_close(self.db);
         }
     }
 }
@@ -87,37 +85,36 @@ impl DatabaseReader for Sqlite3BindingsReader {
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, i32>
     where
-        Self: Sized
+        Self: Sized,
     {
         Sqlite3BindingsReader::new_from_bytes(bytes)
     }
 
     fn from_path(path: &Path) -> Result<Self, i32>
     where
-        Self: Sized
+        Self: Sized,
     {
         Sqlite3BindingsReader::new_from_file(path)
     }
-    
+
     fn read_table<S>(&self, table_name: S) -> Option<Self::Iter>
     where
-        S: AsRef<str>
+        S: AsRef<str>,
     {
         let query = format!("{} {}", s!("SELECT * FROM"), table_name.as_ref());
         let mut stmt: *mut sqlite3_stmt = null_mut();
         let c_query = CString::new(query.as_ref());
 
-        let rc = unsafe {
-            sqlite3_prepare_v2(self.db, c_query.as_ptr(), -1, &mut stmt, null_mut())
-        };
+        let rc =
+            unsafe { sqlite3_prepare_v2(self.db, c_query.as_ptr(), -1, &mut stmt, null_mut()) };
 
         if rc != 0 || stmt.is_null() {
             return None;
         }
-        
+
         let table = SqliteTable::from_stmt(stmt);
         unsafe { sqlite3_finalize(stmt) };
-        
+
         let rows = table.rows.into_iter();
         Some(SqliteIterator { rows })
     }
@@ -136,11 +133,11 @@ impl Iterator for SqliteIterator {
 }
 
 struct SqliteTable {
-    rows: Vec<SqliteRow>
-} 
+    rows: Vec<SqliteRow>,
+}
 
 pub struct SqliteRow {
-    row: Vec<Value>
+    row: Vec<Value>,
 }
 
 impl TableRecord for SqliteRow {
@@ -175,7 +172,7 @@ impl SqliteTable {
                                 let bytes = core::slice::from_raw_parts(text_ptr, len);
                                 Value::String(String::from_utf8_lossy(bytes).into_owned())
                             }
-                        },
+                        }
                         SQLITE_BLOB => {
                             let ptr = sqlite3_column_blob(stmt, i as i32);
                             let len = sqlite3_column_bytes(stmt, i as i32) as usize;
@@ -185,12 +182,12 @@ impl SqliteTable {
                                 let slice = core::slice::from_raw_parts(ptr as *const u8, len);
                                 Value::Blob(slice.to_vec())
                             }
-                        },
+                        }
                         SQLITE_NULL => Value::Null,
                         _ => Value::Null,
                     }
                 };
-                
+
                 row.push(val);
             }
 
