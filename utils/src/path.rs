@@ -1,5 +1,7 @@
 use crate::WideString;
+use alloc::borrow::ToOwned;
 use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use alloc::{format, vec};
 use core::fmt::{Display, Formatter};
@@ -28,7 +30,7 @@ use windows_sys::core::PWSTR;
 
 #[derive(Clone)]
 pub struct Path {
-    inner: String,
+    inner: Arc<str>,
 }
 
 impl Path {
@@ -51,7 +53,7 @@ impl Path {
             }
         }
 
-        Self { inner: normalized }
+        Self { inner: normalized.into() }
     }
 
     pub fn as_absolute(&self) -> Path {
@@ -91,11 +93,11 @@ impl Path {
         if let Some(pos) = self.inner.rfind('\\') {
             if pos == 0 {
                 Some(Path {
-                    inner: self.inner[..=pos].to_string(),
+                    inner: self.inner[..=pos].into(),
                 })
             } else {
                 Some(Path {
-                    inner: self.inner[..pos].to_string(),
+                    inner: self.inner[..pos].into(),
                 })
             }
         } else {
@@ -132,7 +134,7 @@ where
 
     fn div(self, rhs: S) -> Self::Output {
         let rhs_str = rhs.as_ref().replace('/', "\\");
-        let mut new_path = self.inner.clone();
+        let mut new_path = self.inner.to_string();
 
         if !new_path.ends_with('\\') {
             new_path.push('\\');
@@ -140,7 +142,7 @@ where
 
         new_path.push_str(&rhs_str);
 
-        Path::new(new_path)
+        Path::new(Arc::from(new_path))
     }
 }
 

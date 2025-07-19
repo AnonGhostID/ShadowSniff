@@ -219,7 +219,7 @@ impl FileSystem for StorageFileSystemm {
         Ok(())
     }
 
-    fn list_files_filtered<F>(&self, path: Path, filter: &F)
+    fn list_files_filtered<F>(&self, path: Path, filter: &F) -> Option<Vec<Path>>
     where
         F: Fn(&Path) -> bool,
     {
