@@ -18,7 +18,8 @@ members = [
     "hollowing",
     "utils",
     "collector",
-    "zip"
+    "zip",
+    "filesystem"
 ]
 
 [profile.release]
