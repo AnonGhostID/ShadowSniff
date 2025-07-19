@@ -1,5 +1,6 @@
 #![no_std]
 
+pub mod memory;
 pub mod storage;
 
 use alloc::vec::Vec;
