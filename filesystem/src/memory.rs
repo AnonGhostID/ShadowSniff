@@ -161,28 +161,6 @@ impl FileSystem for InMemoryFileSystem {
         }
     }
 
-    fn remove_dir_all(&self, path: Path) -> Result<(), u32> {
-        let parent = path.parent().unwrap_or(Path::new(""));
-        let name = path.file_name().and_then(|s| s.to_str()).ok_or(1)?;
-
-        let mut guard = self.root.write().map_err(|_| 1)?;
-        let mut current = &mut *guard;
-
-        for component in parent.iter().map(|s| s.to_str().unwrap_or("")) {
-            current = match current {
-                FsNode::Directory(children) => children.get_mut(component).ok_or(2)?,
-                _ => return Err(3),
-            };
-        }
-
-        if let FsNode::Directory(children) = current {
-            children.remove(name);
-            Ok(())
-        } else {
-            Err(4)
-        }
-    }
-
     fn remove_file(&self, path: Path) -> Result<(), u32> {
         let parent = path.parent().unwrap_or(Path::new(""));
         let name = path.file_name().and_then(|s| s.to_str()).ok_or(1)?;

@@ -8,7 +8,7 @@ use utils::path::Path;
 
 extern crate alloc;
 
-trait FileSystem {
+pub trait FileSystem {
     fn read_file(&self, path: Path) -> Result<Vec<u8>, u32>;
 
     fn mkdir(&self, path: Path) -> Result<(), u32>;
@@ -19,7 +19,10 @@ trait FileSystem {
 
     fn remove_dir(&self, path: Path) -> Result<(), u32>;
 
-    fn remove_dir_all(&self, path: Path) -> Result<(), u32>;
+    fn remove_dir_all(&self, path: Path) -> Result<(), u32> {
+        remove_dir_contents(path)?;
+        remove_dir(path)
+    }
 
     fn remove_file(&self, path: Path) -> Result<(), u32>;
 

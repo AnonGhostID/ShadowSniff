@@ -126,11 +126,6 @@ impl FileSystem for StorageFileSystemm {
         }
     }
 
-    fn remove_dir_all(&self, path: Path) -> Result<(), u32> {
-        remove_dir_contents(path)?;
-        remove_dir(path)
-    }
-
     fn remove_file(&self, path: Path) -> Result<(), u32> {
         unsafe {
             if DeleteFileW(path.to_wide().as_ptr()) == 0 {
