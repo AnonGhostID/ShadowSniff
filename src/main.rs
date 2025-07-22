@@ -32,7 +32,7 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     }
 
     let fs = VirtualFileSystem::default();
-    let out = Path::new("\\");
+    let out = Path::new("\\output");
     let _ = fs.mkdir(&out);
 
     let collector = AtomicCollector::default();
