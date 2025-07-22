@@ -18,7 +18,8 @@ members = [
     "hollowing",
     "utils",
     "collector",
-    "zip"
+    "zip",
+    "filesystem"
 ]
 
 [profile.release]
@@ -42,3 +43,4 @@ utils = { path = "utils" }
 ipinfo = { path = "ipinfo" }
 collector = { path = "collector" }
 zip = { path = "zip" }
+filesystem = { path = "filesystem" }

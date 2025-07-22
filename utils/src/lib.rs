@@ -5,29 +5,15 @@
 extern crate alloc;
 
 use alloc::string::String;
-use alloc::vec::Vec;
-use core::iter::once;
 use windows_sys::Win32::System::Performance::{QueryPerformanceCounter, QueryPerformanceFrequency};
 use windows_sys::Win32::System::SystemInformation::GetTickCount64;
 
 pub mod base64;
-pub mod browsers;
 pub mod logging;
-pub mod path;
 pub mod process;
 pub mod random;
 
 const FLAG_MAGIC_NUMBER: u32 = 0x1F1E6 /* 🇦 */ - 'A' as u32;
-
-pub trait WideString {
-    fn to_wide(&self) -> Vec<u16>;
-}
-
-impl WideString for str {
-    fn to_wide(&self) -> Vec<u16> {
-        self.encode_utf16().chain(once(0)).collect()
-    }
-}
 
 pub fn get_time_milliseconds() -> u64 {
     unsafe { GetTickCount64() }
