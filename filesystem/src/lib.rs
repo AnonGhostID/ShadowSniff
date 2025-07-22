@@ -2,6 +2,7 @@
 
 extern crate alloc;
 pub mod storage;
+pub mod virtualfs;
 
 use alloc::vec::Vec;
 use core::ops::Deref;
