@@ -4,14 +4,15 @@ use alloc::vec::Vec;
 use core::mem::zeroed;
 use core::ptr::null_mut;
 use miniz_oxide::deflate::compress_to_vec_zlib;
-use tasks::{Task, parent_name};
-use utils::path::{Path, WriteToFile};
+use tasks::{parent_name, Task};
+use utils::path::Path;
 
 use collector::Collector;
+use filesystem::{FileSystem, WriteTo};
 use utils::WideString;
 use windows_sys::Win32::Graphics::Gdi::{
-    BI_RGB, BITMAPINFO, BITMAPINFOHEADER, BitBlt, CreateCompatibleBitmap, CreateCompatibleDC,
-    CreateDCW, DIB_RGB_COLORS, DeleteDC, DeleteObject, GetDIBits, SRCCOPY, SelectObject,
+    BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, CreateDCW, DeleteDC, DeleteObject,
+    GetDIBits, SelectObject, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, SRCCOPY,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     GetSystemMetrics, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN,
@@ -19,16 +20,16 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{
 
 pub(super) struct ScreenshotTask;
 
-impl<C: Collector> Task<C> for ScreenshotTask {
+impl<C: Collector, F: FileSystem> Task<C, F> for ScreenshotTask {
     parent_name!("Screenshot.png");
 
-    fn run(&self, parent: &Path, _: &C) {
+    fn run(&self, parent: &Path, filesystem: &F, _: &C) {
         let Ok((width, height, pixels)) = capture_screen() else {
             return;
         };
 
         let png = create_png(width as u32, height as u32, &pixels);
-        let _ = png.write_to(parent);
+        let _ = png.write_to(filesystem, parent);
     }
 }
 

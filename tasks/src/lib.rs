@@ -40,19 +40,19 @@ macro_rules! parent_name {
 #[macro_export]
 macro_rules! impl_composite_task_runner {
     ($task_type:ty) => {
-        impl<C: collector::Collector> Task<C> for $task_type {
-            fn run(&self, parent: &utils::path::Path, collector: &C) {
-                self.inner.run(parent, collector);
+        impl<C: collector::Collector, F: filesystem::FileSystem> Task<C, F> for $task_type {
+            fn run(&self, parent: &utils::path::Path, filesystem: &F, collector: &C) {
+                self.inner.run(parent, filesystem, collector);
             }
         }
     };
 
     ($task_type:ty, $parent_name:expr) => {
-        impl<C: collector::Collector> Task<C> for $task_type {
+        impl<C: collector::Collector, F: filesystem::FileSystem> Task<C, F> for $task_type {
             $crate::parent_name!($parent_name);
 
-            fn run(&self, parent: &utils::path::Path, collector: &C) {
-                self.inner.run(parent, collector);
+            fn run(&self, parent: &utils::path::Path, filesystem: &F, collector: &C) {
+                self.inner.run(parent, filesystem, collector);
             }
         }
     };
@@ -139,17 +139,17 @@ fn task_path<C: Collector, F: FileSystem>(task: &Arc<dyn Task<C, F>>, parent: &P
 }
 
 struct ThreadParams<'a, C: Collector, F: FileSystem> {
-    task: Arc<dyn Task<C>>,
+    task: Arc<dyn Task<C, F>>,
     path: Path,
     filesystem: &'a F,
     collector: &'a C,
 }
 
 #[allow(unsafe_op_in_unsafe_fn)]
-unsafe extern "system" fn thread_proc<C: Collector>(param: *mut c_void) -> u32 {
-    let params = Box::from_raw(param as *mut ThreadParams<C>);
+unsafe extern "system" fn thread_proc<C: Collector, F: FileSystem>(param: *mut c_void) -> u32 {
+    let params = Box::from_raw(param as *mut ThreadParams<C, F>);
 
-    params.task.run(&params.path, filesystem, params.collector);
+    params.task.run(&params.path, params.filesystem, params.collector);
 
     drop(params);
 

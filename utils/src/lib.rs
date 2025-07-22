@@ -11,7 +11,6 @@ use windows_sys::Win32::System::Performance::{QueryPerformanceCounter, QueryPerf
 use windows_sys::Win32::System::SystemInformation::GetTickCount64;
 
 pub mod base64;
-pub mod browsers;
 pub mod logging;
 pub mod path;
 pub mod process;

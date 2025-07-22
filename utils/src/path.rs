@@ -1,32 +1,18 @@
-use crate::WideString;
-use alloc::borrow::ToOwned;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use alloc::{format, vec};
 use core::fmt::{Display, Formatter};
-use core::mem::zeroed;
 use core::ops::{Deref, Div};
 use core::ptr::null_mut;
 use core::slice::from_raw_parts;
-use windows_sys::Win32::Foundation::{
-    CloseHandle, FALSE, FILETIME, GENERIC_READ, GENERIC_WRITE, INVALID_HANDLE_VALUE, S_OK,
-};
-use windows_sys::Win32::Foundation::{ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS, GetLastError};
-use windows_sys::Win32::Storage::FileSystem::{
-    CREATE_ALWAYS, CREATE_NEW, CopyFileW, CreateDirectoryW, CreateFileW, DeleteFileW,
-    FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_SHARE_WRITE, FindClose,
-    FindFirstFileW, FindNextFileW, GetFileAttributesExW, GetFileAttributesW, GetFileExInfoStandard,
-    GetFileSizeEx, INVALID_FILE_ATTRIBUTES, OPEN_EXISTING, ReadFile, RemoveDirectoryW,
-    WIN32_FILE_ATTRIBUTE_DATA, WIN32_FIND_DATAW, WriteFile,
-};
+use windows_sys::core::PWSTR;
+use windows_sys::Win32::Foundation::S_OK;
 use windows_sys::Win32::System::Com::CoTaskMemFree;
 use windows_sys::Win32::System::Environment::GetCurrentDirectoryW;
 use windows_sys::Win32::System::SystemInformation::GetTickCount64;
 use windows_sys::Win32::UI::Shell::{
     FOLDERID_LocalAppData, FOLDERID_RoamingAppData, FOLDERID_System, SHGetKnownFolderPath,
 };
-use windows_sys::core::PWSTR;
 
 #[derive(Clone)]
 pub struct Path {

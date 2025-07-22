@@ -1,22 +1,24 @@
 use core::{mem::zeroed, ptr::null_mut};
 
-use crate::FileSystem;
+use crate::{FileSystem, FileSystemExt};
+use alloc::string::String;
 use alloc::vec::Vec;
 use alloc::{format, vec};
-use utils::{WideString, path::Path};
-use windows_sys::Win32::Storage::FileSystem::CreateDirectoryW;
+use utils::{path::Path, WideString};
+use windows_sys::Win32::Foundation::{ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS, FALSE, GENERIC_WRITE};
+use windows_sys::Win32::Storage::FileSystem::{CreateDirectoryW, DeleteFileW, FindClose, FindFirstFileW, FindNextFileW, GetFileAttributesExW, GetFileAttributesW, GetFileExInfoStandard, RemoveDirectoryW, WriteFile, CREATE_ALWAYS, CREATE_NEW, FILE_ATTRIBUTE_DIRECTORY, INVALID_FILE_ATTRIBUTES, WIN32_FILE_ATTRIBUTE_DATA, WIN32_FIND_DATAW};
 use windows_sys::Win32::{
-    Foundation::{CloseHandle, GENERIC_READ, GetLastError, INVALID_HANDLE_VALUE},
+    Foundation::{CloseHandle, GetLastError, GENERIC_READ, INVALID_HANDLE_VALUE},
     Storage::FileSystem::{
-        CreateFileW, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_SHARE_WRITE, GetFileSizeEx,
-        OPEN_EXISTING, ReadFile,
+        CreateFileW, GetFileSizeEx, ReadFile, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ,
+        FILE_SHARE_WRITE, OPEN_EXISTING,
     },
 };
 
-pub struct StorageFileSystemm;
+pub struct StorageFileSystem;
 
-impl FileSystem for StorageFileSystemm {
-    fn read_file(&self, path: Path) -> Result<Vec<u8>, u32> {
+impl FileSystem for StorageFileSystem {
+    fn read_file(&self, path: &Path) -> Result<Vec<u8>, u32> {
         let wide = path.to_wide();
 
         unsafe {
@@ -64,7 +66,7 @@ impl FileSystem for StorageFileSystemm {
         }
     }
 
-    fn mkdir(&self, path: Path) -> Result<(), u32> {
+    fn mkdir(&self, path: &Path) -> Result<(), u32> {
         let wide = path.to_wide();
 
         unsafe {
@@ -80,7 +82,7 @@ impl FileSystem for StorageFileSystemm {
         Ok(())
     }
 
-    fn mkdirs(&self, path: Path) -> Result<(), u32> {
+    fn mkdirs(&self, path: &Path) -> Result<(), u32> {
         let parts: Vec<&str> = path.split('\\').filter(|part| !part.is_empty()).collect();
 
         let mut current = String::new();
@@ -100,12 +102,10 @@ impl FileSystem for StorageFileSystemm {
         Ok(())
     }
 
-    fn remove_dir_contents(&self, path: Path) -> Result<(), u32> {
-        if let Some(entries) = list_files(path) {
+    fn remove_dir_contents(&self, path: &Path) -> Result<(), u32> {
+        if let Some(entries) = self.list_files(path) {
             for entry in entries {
-                let is_dir = entry.is_dir();
-
-                if is_dir {
+                if self.is_dir(&entry) {
                     self.remove_dir_all(&entry)?;
                 } else {
                     self.remove_file(&entry)?;
@@ -116,7 +116,7 @@ impl FileSystem for StorageFileSystemm {
         Ok(())
     }
 
-    fn remove_dir(&self, path: Path) -> Result<(), u32> {
+    fn remove_dir(&self, path: &Path) -> Result<(), u32> {
         unsafe {
             if RemoveDirectoryW(path.to_wide().as_ptr()) == 0 {
                 Err(GetLastError())
@@ -126,7 +126,7 @@ impl FileSystem for StorageFileSystemm {
         }
     }
 
-    fn remove_file(&self, path: Path) -> Result<(), u32> {
+    fn remove_file(&self, path: &Path) -> Result<(), u32> {
         unsafe {
             if DeleteFileW(path.to_wide().as_ptr()) == 0 {
                 Err(GetLastError())
@@ -136,7 +136,7 @@ impl FileSystem for StorageFileSystemm {
         }
     }
 
-    fn create_file(&self, path: Path) -> Result<(), u32> {
+    fn create_file(&self, path: &Path) -> Result<(), u32> {
         let wide = path.to_wide();
         unsafe {
             let handle = CreateFileW(
@@ -165,10 +165,10 @@ impl FileSystem for StorageFileSystemm {
         Ok(())
     }
 
-    fn write_file(&self, path: Path, data: &[u8]) -> Result<(), u32> {
+    fn write_file(&self, path: &Path, data: &[u8]) -> Result<(), u32> {
         if let Some(parent) = path.parent()
-            && !parent.is_exists()
-            && let Err(e) = parent.mkdirs()
+            && !self.is_exists(&parent)
+            && let Err(e) = self.mkdirs(&parent)
         {
             return Err(e);
         }
@@ -214,7 +214,7 @@ impl FileSystem for StorageFileSystemm {
         Ok(())
     }
 
-    fn list_files_filtered<F>(&self, path: Path, filter: &F) -> Option<Vec<Path>>
+    fn list_files_filtered<F>(&self, path: &Path, filter: &F) -> Option<Vec<Path>>
     where
         F: Fn(&Path) -> bool,
     {
@@ -267,17 +267,16 @@ impl FileSystem for StorageFileSystemm {
         }
     }
 
-    fn get_filetime(&self, path: Path) -> Option<(u32, u32)> {
+    fn get_filetime(&self, path: &Path) -> Option<(u32, u32)> {
         let mut data: WIN32_FILE_ATTRIBUTE_DATA = unsafe { zeroed() };
 
         if unsafe {
             GetFileAttributesExW(
-                self.to_wide().as_ptr(),
+                path.to_wide().as_ptr(),
                 GetFileExInfoStandard,
                 &mut data as *mut _ as *mut _,
             )
-        } == FALSE
-        {
+        } == FALSE {
             None
         } else {
             let write_time = data.ftLastWriteTime;
@@ -285,11 +284,11 @@ impl FileSystem for StorageFileSystemm {
         }
     }
 
-    fn is_exists(&self, path: Path) -> bool {
+    fn is_exists(&self, path: &Path) -> bool {
         get_attributes(path).is_some()
     }
 
-    fn is_dir(&self, path: Path) -> bool {
+    fn is_dir(&self, path: &Path) -> bool {
         if let Some(attr) = get_attributes(path)
             && (attr & FILE_ATTRIBUTE_DIRECTORY) != 0
         {
@@ -299,7 +298,7 @@ impl FileSystem for StorageFileSystemm {
         }
     }
 
-    fn is_file(&self, path: Path) -> bool {
+    fn is_file(&self, path: &Path) -> bool {
         if let Some(attr) = get_attributes(path)
             && (attr & FILE_ATTRIBUTE_DIRECTORY) == 0
         {
@@ -310,7 +309,7 @@ impl FileSystem for StorageFileSystemm {
     }
 }
 
-fn get_attributes(path: Path) -> Option<u32> {
+fn get_attributes(path: &Path) -> Option<u32> {
     unsafe {
         let attr = GetFileAttributesW(path.to_wide().as_ptr());
         if attr == INVALID_FILE_ATTRIBUTES {

