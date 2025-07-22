@@ -5,8 +5,15 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use alloc::{format, vec};
 use utils::{path::Path, WideString};
-use windows_sys::Win32::Foundation::{ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS, FALSE, GENERIC_WRITE};
-use windows_sys::Win32::Storage::FileSystem::{CreateDirectoryW, DeleteFileW, FindClose, FindFirstFileW, FindNextFileW, GetFileAttributesExW, GetFileAttributesW, GetFileExInfoStandard, RemoveDirectoryW, WriteFile, CREATE_ALWAYS, CREATE_NEW, FILE_ATTRIBUTE_DIRECTORY, INVALID_FILE_ATTRIBUTES, WIN32_FILE_ATTRIBUTE_DATA, WIN32_FIND_DATAW};
+use windows_sys::Win32::Foundation::{
+    ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS, FALSE, GENERIC_WRITE,
+};
+use windows_sys::Win32::Storage::FileSystem::{
+    CreateDirectoryW, DeleteFileW, FindClose, FindFirstFileW, FindNextFileW, GetFileAttributesExW,
+    GetFileAttributesW, GetFileExInfoStandard, RemoveDirectoryW, WriteFile, CREATE_ALWAYS,
+    CREATE_NEW, FILE_ATTRIBUTE_DIRECTORY, INVALID_FILE_ATTRIBUTES, WIN32_FILE_ATTRIBUTE_DATA,
+    WIN32_FIND_DATAW,
+};
 use windows_sys::Win32::{
     Foundation::{CloseHandle, GetLastError, GENERIC_READ, INVALID_HANDLE_VALUE},
     Storage::FileSystem::{
@@ -276,7 +283,8 @@ impl FileSystem for StorageFileSystem {
                 GetFileExInfoStandard,
                 &mut data as *mut _ as *mut _,
             )
-        } == FALSE {
+        } == FALSE
+        {
             None
         } else {
             let write_time = data.ftLastWriteTime;

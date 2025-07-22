@@ -78,7 +78,11 @@ fn collect_servers() -> Vec<Server> {
     result
 }
 
-fn collect_servers_from_path<F, S>(filesystem: &F, path: &Path, servers_node: S) -> Option<Vec<Server>>
+fn collect_servers_from_path<F, S>(
+    filesystem: &F,
+    path: &Path,
+    servers_node: S,
+) -> Option<Vec<Server>>
 where
     S: AsRef<str>,
     F: FileSystem,
@@ -90,7 +94,7 @@ where
     }
 
     let bytes = filesystem.read_file(path);
-    
+
     if bytes.is_err() {
         return None;
     }

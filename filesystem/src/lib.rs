@@ -5,7 +5,6 @@ pub mod storage;
 pub mod virtualfs;
 
 use alloc::vec::Vec;
-use core::ops::Deref;
 use utils::path::Path;
 
 pub trait FileSystem {
@@ -64,7 +63,7 @@ pub trait WriteTo {
 
 impl<T> WriteTo for T
 where
-    T: AsRef<[u8]> + ?Sized
+    T: AsRef<[u8]> + ?Sized,
 {
     fn write_to<F, P>(&self, filesystem: &F, path: P) -> Result<(), u32>
     where

@@ -153,7 +153,7 @@ impl ZipArchive {
     }
 
     fn add_file_internal<F>(&mut self, filesystem: &F, file: &Path) -> Option<()>
-    where 
+    where
         F: FileSystem,
     {
         if !filesystem.is_file(file) {
@@ -161,7 +161,8 @@ impl ZipArchive {
         }
 
         let full_name = file.fullname()?;
-        let file_time = filesystem.get_filetime(file)?;
+        let file_time = filesystem.get_filetime(file).unwrap_or((0, 0));
+
         let data = filesystem.read_file(file).ok()?;
 
         let entry = ZipEntry {
@@ -182,7 +183,7 @@ impl ZipArchive {
         file: &Path,
         use_parent: bool,
     ) -> Option<()>
-    where 
+    where
         F: FileSystem,
     {
         if !filesystem.is_exists(file) || !filesystem.is_exists(root) {
@@ -194,7 +195,7 @@ impl ZipArchive {
                 self.add_folder_content_internal(filesystem, root, &file, use_parent)?
             } else if filesystem.is_file(&file) {
                 let data = filesystem.read_file(&file).ok()?;
-                let file_time = filesystem.get_filetime(&file)?;
+                let file_time = filesystem.get_filetime(&file).unwrap_or((0, 0));
 
                 let rel_path = if use_parent {
                     file.strip_prefix(root.deref())?.strip_prefix("\\")?
@@ -222,8 +223,11 @@ impl ZipArchive {
 
 fn filetime_to_dos_date_time(file_time: &(u32, u32)) -> (u16, u16) {
     let mut sys_time: SYSTEMTIME = unsafe { zeroed() };
-    let file_time = FILETIME { dwLowDateTime: file_time.0, dwHighDateTime: file_time.1 };
-    
+    let file_time = FILETIME {
+        dwLowDateTime: file_time.0,
+        dwHighDateTime: file_time.1,
+    };
+
     unsafe {
         if FileTimeToSystemTime(&file_time, &mut sys_time) == 0 {
             return (0, 0);

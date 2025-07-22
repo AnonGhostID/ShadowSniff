@@ -39,7 +39,9 @@ impl Path {
             }
         }
 
-        Self { inner: normalized.into() }
+        Self {
+            inner: normalized.into(),
+        }
     }
 
     pub fn as_absolute(&self) -> Path {

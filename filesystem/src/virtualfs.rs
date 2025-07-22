@@ -3,31 +3,15 @@ use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::fmt;
 use spin::RwLock;
 use utils::path::Path;
 
-
 #[derive(Clone)]
 enum Entry {
-    File {
-        data: Vec<u8>
-    },
-    Directory
+    File { data: Vec<u8> },
+    Directory,
 }
 
-impl fmt::Debug for Entry {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Entry::File { .. } => f.debug_struct("File")
-                .field("data", &"..")
-                .finish(),
-            Entry::Directory => f.debug_tuple("Directory").finish(),
-        }
-    }
-}
-
-#[derive(Debug)]
 pub struct VirtualFileSystem {
     entries: RwLock<BTreeMap<String, Entry>>,
 }
@@ -39,7 +23,7 @@ impl Default for VirtualFileSystem {
         map.insert(String::from("\\"), Entry::Directory);
 
         Self {
-            entries: RwLock::new(map)
+            entries: RwLock::new(map),
         }
     }
 }
@@ -61,7 +45,7 @@ impl FileSystem for VirtualFileSystem {
         match map.get(&path.to_string()) {
             Some(Entry::File { data, .. }) => Ok(data.clone()),
             Some(Entry::Directory { .. }) => Err(1), // error: is a directory
-            None => Err(2),                         // error: not found
+            None => Err(2),                          // error: not found
         }
     }
 
@@ -81,10 +65,7 @@ impl FileSystem for VirtualFileSystem {
             _ => return Err(5), // parent not dir or not found
         }
 
-        map.insert(
-            path_str,
-            Entry::Directory,
-        );
+        map.insert(path_str, Entry::Directory);
         Ok(())
     }
 
@@ -103,10 +84,7 @@ impl FileSystem for VirtualFileSystem {
             current_path.push_str(comp);
 
             if !map.contains_key(&current_path) {
-                map.insert(
-                    current_path.clone(),
-                    Entry::Directory,
-                );
+                map.insert(current_path.clone(), Entry::Directory);
             } else if let Some(Entry::File { .. }) = map.get(&current_path) {
                 return Err(6); // a file exists where a directory should be
             }
@@ -171,7 +149,7 @@ impl FileSystem for VirtualFileSystem {
                 Ok(())
             }
             Some(Entry::Directory) => Err(9), // is a directory
-            None => Err(2),                           // not found
+            None => Err(2),                   // not found
         }
     }
 
@@ -191,12 +169,7 @@ impl FileSystem for VirtualFileSystem {
             _ => return Err(5), // parent not dir or missing
         }
 
-        map.insert(
-            path_str,
-            Entry::File {
-                data: Vec::new(),
-            },
-        );
+        map.insert(path_str, Entry::File { data: Vec::new() });
         Ok(())
     }
 
@@ -213,9 +186,9 @@ impl FileSystem for VirtualFileSystem {
 
         match map.get_mut(&path_str) {
             Some(Entry::File {
-                     data: existing_data,
-                     ..
-                 }) => {
+                data: existing_data,
+                ..
+            }) => {
                 existing_data.clear();
                 existing_data.extend_from_slice(data);
                 Ok(())
@@ -230,7 +203,7 @@ impl FileSystem for VirtualFileSystem {
                         map.insert(
                             path_str,
                             Entry::File {
-                                data: data.to_vec()
+                                data: data.to_vec(),
                             },
                         );
                         Ok(())
@@ -296,8 +269,8 @@ impl FileSystem for VirtualFileSystem {
         Some(results)
     }
 
-    fn get_filetime(&self, path: &Path) -> Option<(u32, u32)> {
-        Some((0,0))
+    fn get_filetime(&self, _: &Path) -> Option<(u32, u32)> {
+        None
     }
 
     fn is_exists(&self, path: &Path) -> bool {

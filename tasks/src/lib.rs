@@ -149,7 +149,9 @@ struct ThreadParams<'a, C: Collector, F: FileSystem> {
 unsafe extern "system" fn thread_proc<C: Collector, F: FileSystem>(param: *mut c_void) -> u32 {
     let params = Box::from_raw(param as *mut ThreadParams<C, F>);
 
-    params.task.run(&params.path, params.filesystem, params.collector);
+    params
+        .task
+        .run(&params.path, params.filesystem, params.collector);
 
     drop(params);
 

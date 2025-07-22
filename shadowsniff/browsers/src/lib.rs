@@ -47,14 +47,7 @@ where
     T: Ord,
     S: AsRef<str>,
 {
-    collect_and_read_from_all_profiles(
-        profiles, 
-        Databases::Sqlite, 
-        filesystem, 
-        path, 
-        table, 
-        mapper
-    )
+    collect_and_read_from_all_profiles(profiles, Databases::Sqlite, filesystem, path, table, mapper)
 }
 
 pub(crate) fn collect_and_read_from_all_profiles<D, FS, P, R, F, T, S>(
@@ -80,7 +73,13 @@ where
         if !filesystem.is_exists(db_path.as_ref()) {
             None
         } else {
-            read_and_map_records(&db_type, filesystem, db_path.as_ref(), table.as_ref(), &mapper)
+            read_and_map_records(
+                &db_type,
+                filesystem,
+                db_path.as_ref(),
+                table.as_ref(),
+                &mapper,
+            )
         }
     })
 }
@@ -106,7 +105,12 @@ where
     }
 }
 
-pub(crate) fn to_string_and_write_all<F, T>(data: &[T], sep: &str, filesystem: &F, dst: &Path) -> Result<(), u32>
+pub(crate) fn to_string_and_write_all<F, T>(
+    data: &[T],
+    sep: &str,
+    filesystem: &F,
+    dst: &Path,
+) -> Result<(), u32>
 where
     T: Display,
     F: FileSystem,
@@ -120,7 +124,7 @@ where
 
 pub(crate) fn read_and_map_records<FS, D, T, F>(
     db_type: D,
-    filesystem: &FS,    
+    filesystem: &FS,
     path: &Path,
     table_name: &str,
     mapper: F,

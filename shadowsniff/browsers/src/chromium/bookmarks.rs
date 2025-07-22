@@ -26,10 +26,9 @@ impl<C: Collector, F: FileSystem> Task<C, F> for BookmarksTask {
     parent_name!("Bookmarks.txt");
 
     fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
-        let Some(bookmarks) = collect_from_all_profiles(
-            &self.browser.profiles, 
-            |profile| read_bookmarks(&StorageFileSystem, profile)
-        ) else {
+        let Some(bookmarks) = collect_from_all_profiles(&self.browser.profiles, |profile| {
+            read_bookmarks(&StorageFileSystem, profile)
+        }) else {
             return;
         };
 
@@ -41,7 +40,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for BookmarksTask {
 }
 
 fn read_bookmarks<F>(filesystem: &F, profile: &Path) -> Option<Vec<Bookmark>>
-where 
+where
     F: FileSystem,
 {
     let content = filesystem.read_file(&(profile / s!("Bookmarks"))).ok()?;
