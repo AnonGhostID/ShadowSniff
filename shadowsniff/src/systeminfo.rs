@@ -1,10 +1,10 @@
 use crate::alloc::borrow::ToOwned;
 use alloc::string::String;
 use collector::Collector;
+use filesystem::path::Path;
 use filesystem::{FileSystem, WriteTo};
 use obfstr::obfstr as s;
 use tasks::{parent_name, Task};
-use utils::path::Path;
 use utils::process;
 
 pub(super) struct SystemInfoTask;

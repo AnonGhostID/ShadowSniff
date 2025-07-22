@@ -13,10 +13,10 @@ use alloc::vec;
 use alloc::vec::Vec;
 use collector::Collector;
 use core::fmt::{Display, Formatter};
+use filesystem::path::Path;
 use filesystem::{FileSystem, WriteTo};
 use tasks::Task;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask};
-use utils::path::Path;
 
 pub struct BrowsersTask<C: Collector, F: FileSystem> {
     inner: CompositeTask<C, F>,

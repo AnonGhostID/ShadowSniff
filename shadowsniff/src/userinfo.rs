@@ -1,10 +1,10 @@
 use crate::alloc::borrow::ToOwned;
 use alloc::format;
 use collector::Collector;
+use filesystem::path::Path;
 use filesystem::{FileSystem, WriteTo};
 use ipinfo::unwrapped_ip_info;
 use tasks::{parent_name, Task};
-use utils::path::Path;
 
 pub(super) struct UserInfoTask;
 

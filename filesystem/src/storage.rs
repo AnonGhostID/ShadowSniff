@@ -1,10 +1,11 @@
 use core::{mem::zeroed, ptr::null_mut};
 
+use crate::path::{Path, WideString};
 use crate::{FileSystem, FileSystemExt};
 use alloc::string::String;
 use alloc::vec::Vec;
 use alloc::{format, vec};
-use utils::{path::Path, WideString};
+use core::iter::once;
 use windows_sys::Win32::Foundation::{
     ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS, FALSE, GENERIC_WRITE,
 };
@@ -231,7 +232,7 @@ impl FileSystem for StorageFileSystem {
             format!("{path}\\*")
         };
 
-        let search_path = search_path.to_wide();
+        let search_path: Vec<u16> = search_path.encode_utf16().chain(once(0)).collect();
 
         unsafe {
             let mut data: WIN32_FIND_DATAW = zeroed();

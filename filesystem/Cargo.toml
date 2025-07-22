@@ -20,4 +20,3 @@ windows-sys = { version = "0.60.2", features = [
     "Win32_System_Performance"
 ] }
 spin = "0.10.0"
-utils = { path = "../utils" }

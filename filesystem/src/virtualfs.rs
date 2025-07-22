@@ -1,10 +1,10 @@
+use crate::path::Path;
 use crate::FileSystem;
 use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use spin::RwLock;
-use utils::path::Path;
 
 #[derive(Clone)]
 enum Entry {

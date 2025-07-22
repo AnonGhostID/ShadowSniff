@@ -23,13 +23,13 @@ use core::ffi::c_void;
 use core::mem::zeroed;
 use core::ptr::null_mut;
 use core::slice;
+use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
 use filesystem::FileSystem;
 use json::parse;
 use obfstr::obfstr as s;
 use tasks::{composite_task, CompositeTask, Task};
 use utils::base64::base64_decode_string;
-use utils::path::Path;
 use windows_sys::Win32::Foundation::LocalFree;
 use windows_sys::Win32::Security::Cryptography::{
     BCryptCloseAlgorithmProvider, BCryptDecrypt, BCryptDestroyKey,

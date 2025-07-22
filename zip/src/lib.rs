@@ -8,9 +8,9 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::mem::zeroed;
 use core::ops::Deref;
+use filesystem::path::Path;
 use filesystem::{FileSystem, FileSystemExt};
 use miniz_oxide::deflate::compress_to_vec;
-use utils::path::Path;
 use windows_sys::Win32::Foundation::{FILETIME, SYSTEMTIME};
 use windows_sys::Win32::System::Time::FileTimeToSystemTime;
 

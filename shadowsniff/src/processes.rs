@@ -5,9 +5,9 @@ use collector::Collector;
 use core::ffi::CStr;
 use core::fmt::Write;
 use core::ptr::null_mut;
+use filesystem::path::Path;
 use filesystem::{FileSystem, WriteTo};
 use tasks::{parent_name, Task};
-use utils::path::Path;
 use windows_sys::Win32::Foundation::{CloseHandle, MAX_PATH};
 use windows_sys::Win32::System::ProcessStatus::{K32EnumProcesses, K32GetModuleBaseNameA};
 use windows_sys::Win32::System::Threading::{

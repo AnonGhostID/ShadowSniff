@@ -87,12 +87,12 @@ When started, each task runs in its own thread.
 A composite task waits for all its subtasks to finish before it completes.
 
 The stealer **does not use the Rust standard library**.
-The `utils::path::Path` type used in `run` comes from the crate `utils`.
+The `filesystem::path::Path` type used in `run` comes from the crate `utils`.
 
 Before calling `SniffTask::new().run(&base_path)`, you **must** call `ipinfo::init_ip_info()`, otherwise it won't work.
 
 ```rust
-use utils::path::Path;
+use filesystem::path::Path;
 use ipinfo::init_ip_info;
 use shadowsniff::SniffTask;
 

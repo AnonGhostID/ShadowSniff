@@ -1,7 +1,9 @@
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
+use alloc::vec::Vec;
 use alloc::{format, vec};
 use core::fmt::{Display, Formatter};
+use core::iter::once;
 use core::ops::{Deref, Div};
 use core::ptr::null_mut;
 use core::slice::from_raw_parts;
@@ -210,5 +212,15 @@ impl Path {
         let ms = unsafe { GetTickCount64() };
         let name = format!("{ms:x}");
         Self::temp() / format!("{}{name}", prefix.as_ref())
+    }
+}
+
+pub trait WideString {
+    fn to_wide(&self) -> Vec<u16>;
+}
+
+impl WideString for Path {
+    fn to_wide(&self) -> Vec<u16> {
+        self.encode_utf16().chain(once(0)).collect()
     }
 }
