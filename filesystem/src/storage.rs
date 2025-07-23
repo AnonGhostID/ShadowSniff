@@ -25,6 +25,12 @@ use windows_sys::Win32::{
 
 pub struct StorageFileSystem;
 
+impl AsRef<StorageFileSystem> for StorageFileSystem {
+    fn as_ref(&self) -> &StorageFileSystem {
+        self
+    }
+}
+
 impl FileSystem for StorageFileSystem {
     fn read_file(&self, path: &Path) -> Result<Vec<u8>, u32> {
         let wide = path.to_wide();

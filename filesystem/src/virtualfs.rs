@@ -38,6 +38,12 @@ fn parent_path(s: &str) -> Option<String> {
     })
 }
 
+impl AsRef<VirtualFileSystem> for VirtualFileSystem {
+    fn as_ref(&self) -> &VirtualFileSystem {
+        self
+    }
+}
+
 impl FileSystem for VirtualFileSystem {
     fn read_file(&self, path: &Path) -> Result<Vec<u8>, u32> {
         let map = self.entries.read();
@@ -224,7 +230,7 @@ impl FileSystem for VirtualFileSystem {
         let prefix = if dir_str.ends_with('\\') {
             dir_str.clone()
         } else {
-            format!("{}\\", dir_str)
+            format!("{dir_str}\\")
         };
 
         if !map.contains_key(&dir_str) {

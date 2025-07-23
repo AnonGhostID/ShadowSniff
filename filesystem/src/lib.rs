@@ -10,7 +10,7 @@ use alloc::vec::Vec;
 use core::ops::Deref;
 
 /// Trait representing a generic file system interface.
-pub trait FileSystem {
+pub trait FileSystem: AsRef<Self> + Send + Sync {
     /// Reads the entire content of the file at the given path.
     fn read_file(&self, path: &Path) -> Result<Vec<u8>, u32>;
 

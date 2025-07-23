@@ -5,6 +5,8 @@
 extern crate alloc;
 
 use alloc::string::String;
+use core::ops::Deref;
+use filesystem::FileSystem;
 use windows_sys::Win32::System::Performance::{QueryPerformanceCounter, QueryPerformanceFrequency};
 use windows_sys::Win32::System::SystemInformation::GetTickCount64;
 
