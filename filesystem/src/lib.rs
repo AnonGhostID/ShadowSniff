@@ -148,17 +148,22 @@ where
 /// If `with_filename` is true, appends the source filename to `dst_path`.
 ///
 /// Creates parent directories in the destination if they do not exist.
-pub fn copy_file<SrcFs, DstFs>(
-    src_fs: &SrcFs,
+pub fn copy_file<SrcRef, SrcFs, DstRef, DstFs>(
+    src_fs: SrcRef,
     src_path: &Path,
-    dst_fs: &DstFs,
+    dst_fs: DstRef,
     dst_path: &Path,
     with_filename: bool,
 ) -> Result<(), u32>
 where
+    SrcRef: AsRef<SrcFs>,
     SrcFs: FileSystem,
+    DstRef: AsRef<DstFs>,
     DstFs: FileSystem,
 {
+    let src_fs = src_fs.as_ref();
+    let dst_fs = dst_fs.as_ref();
+
     let dst_path = if with_filename {
         &(dst_path / src_path.fullname().ok_or(2u32)?)
     } else {
@@ -180,18 +185,23 @@ where
 /// applying a filter function to select which files/directories to copy.
 ///
 /// The copied folder will be created inside `dst_path` using the folder's own name.
-pub fn copy_folder_with_filter<SrcFs, DstFs, F>(
-    src_fs: &SrcFs,
+pub fn copy_folder_with_filter<SrcRef, SrcFs, DstRef, DstFs, F>(
+    src_fs: SrcRef,
     src_path: &Path,
-    dst_fs: &DstFs,
+    dst_fs: DstRef,
     dst_path: &Path,
     filter: &F,
 ) -> Result<(), u32>
 where
+    SrcRef: AsRef<SrcFs>,
     SrcFs: FileSystem,
+    DstRef: AsRef<DstFs>,
     DstFs: FileSystem,
     F: Fn(&Path) -> bool,
 {
+    let src_fs = src_fs.as_ref();
+    let dst_fs = dst_fs.as_ref();
+
     if !src_fs.is_dir(src_path) {
         return Err(1);
     }
@@ -202,14 +212,16 @@ where
 
 /// Copies a folder recursively from `src_fs` at `src_path` to `dst_fs` at `dst_path`
 /// without any filter (copies everything).
-pub fn copy_folder<SrcFs, DstFs>(
-    src_fs: &SrcFs,
+pub fn copy_folder<SrcRef, SrcFs, DstRef, DstFs>(
+    src_fs: SrcRef,
     src_path: &Path,
-    dst_fs: &DstFs,
+    dst_fs: DstRef,
     dst_path: &Path,
 ) -> Result<(), u32>
 where
+    SrcRef: AsRef<SrcFs>,
     SrcFs: FileSystem,
+    DstRef: AsRef<DstFs>,
     DstFs: FileSystem,
 {
     copy_folder_with_filter(src_fs, src_path, dst_fs, dst_path, &|_| true)
@@ -217,14 +229,16 @@ where
 
 /// Copies all contents of a directory recursively from `src_fs` at `src_path`
 /// to `dst_fs` at `dst_path` without filtering.
-pub fn copy_content<SrcFs, DstFs>(
-    src_fs: &SrcFs,
+pub fn copy_content<SrcRef, SrcFs, DstRef, DstFs>(
+    src_fs: SrcRef,
     src_path: &Path,
-    dst_fs: &DstFs,
+    dst_fs: DstRef,
     dst_path: &Path,
 ) -> Result<(), u32>
 where
+    SrcRef: AsRef<SrcFs>,
     SrcFs: FileSystem,
+    DstRef: AsRef<DstFs>,
     DstFs: FileSystem,
 {
     copy_content_with_filter(src_fs, src_path, dst_fs, dst_path, &|_| true)
@@ -232,18 +246,23 @@ where
 
 /// Copies the contents of a directory recursively from `src_fs` at `src_path`
 /// to `dst_fs` at `dst_path`, applying a filter function.
-pub fn copy_content_with_filter<SrcFs, DstFs, F>(
-    src_fs: &SrcFs,
+pub fn copy_content_with_filter<SrcRef, SrcFs, DstRef, DstFs, F>(
+    src_fs: SrcRef,
     src_path: &Path,
-    dst_fs: &DstFs,
+    dst_fs: DstRef,
     dst_path: &Path,
     filter: &F,
 ) -> Result<(), u32>
 where
+    SrcRef: AsRef<SrcFs>,
     SrcFs: FileSystem,
+    DstRef: AsRef<DstFs>,
     DstFs: FileSystem,
     F: Fn(&Path) -> bool,
 {
+    let src_fs = src_fs.as_ref();
+    let dst_fs = dst_fs.as_ref();
+
     if !src_fs.is_dir(src_path) {
         return Err(1u32);
     }
