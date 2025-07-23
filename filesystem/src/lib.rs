@@ -179,7 +179,7 @@ where
     if let Some(parent) = dst_path.parent()
         && !dst_fs.is_exists(&parent)
     {
-        dst_fs.mkdirs(&parent)?;
+        dst_fs.mkdirs(parent)?;
     }
 
     dst_fs.write_file(dst_path, &data)
@@ -291,15 +291,15 @@ where
         return Err(1u32);
     }
 
-    if let Some(files) = src_fs.list_files_filtered(src_path, filter) {
+    if let Some(files) = &src_fs.list_files_filtered(src_path, filter) {
         for entry in files {
             let relative = entry.strip_prefix(src_path.deref()).ok_or(2u32)?;
             let new_dst = dst_path / relative;
 
-            if src_fs.is_dir(&entry) {
-                copy_content_with_filter(src_fs, &entry, dst_fs, &new_dst, filter)?;
+            if src_fs.is_dir(entry) {
+                copy_content_with_filter(src_fs, entry, dst_fs, new_dst, filter)?;
             } else {
-                copy_file(src_fs, &entry, dst_fs, &new_dst, false)?;
+                copy_file(src_fs, entry, dst_fs, new_dst, false)?;
             }
         }
     }

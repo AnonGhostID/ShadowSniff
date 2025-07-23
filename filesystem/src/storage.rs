@@ -133,12 +133,12 @@ impl FileSystem for StorageFileSystem {
         P: AsRef<Path>
     {
         let path = path.as_ref();
-        if let Some(entries) = self.list_files(path) {
+        if let Some(entries) = &self.list_files(path) {
             for entry in entries {
-                if self.is_dir(&entry) {
-                    self.remove_dir_all(&entry)?;
+                if self.is_dir(entry) {
+                    self.remove_dir_all(entry)?;
                 } else {
-                    self.remove_file(&entry)?;
+                    self.remove_file(entry)?;
                 }
             }
         }
@@ -214,9 +214,8 @@ impl FileSystem for StorageFileSystem {
         let path = path.as_ref();
         if let Some(parent) = path.parent()
             && !self.is_exists(&parent)
-            && let Err(e) = self.mkdirs(&parent)
         {
-            return Err(e);
+            self.mkdirs(parent)?;
         }
 
         let wide = path.to_wide();

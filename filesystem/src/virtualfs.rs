@@ -214,9 +214,8 @@ impl FileSystem for VirtualFileSystem {
         let path = path.as_ref();
         if let Some(parent) = path.parent()
             && !self.is_exists(&parent)
-            && let Err(e) = self.mkdirs(&parent)
         {
-            return Err(e);
+            self.mkdirs(parent)?
         }
 
         let path_str = path.to_string();
