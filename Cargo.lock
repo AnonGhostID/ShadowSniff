@@ -224,6 +224,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "99d9a13982dcf210057a8a78572b2217b667c3beacbf3a0d8b454f6f82837d38"
 
 [[package]]
+name = "regedit"
+version = "0.1.0"
+dependencies = [
+ "utils",
+ "windows-sys 0.59.0",
+]
+
+[[package]]
 name = "requests"
 version = "0.1.0"
 dependencies = [
