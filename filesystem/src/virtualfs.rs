@@ -44,12 +44,6 @@ fn parent_path(s: &str) -> Option<String> {
     })
 }
 
-impl AsRef<VirtualFileSystem> for VirtualFileSystem {
-    fn as_ref(&self) -> &VirtualFileSystem {
-        self
-    }
-}
-
 impl FileSystem for VirtualFileSystem {
     fn read_file<P>(&self, path: P) -> Result<Vec<u8>, u32>
     where

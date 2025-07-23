@@ -267,6 +267,7 @@ dependencies = [
  "collector",
  "filesystem",
  "ftp",
+ "games",
  "ipinfo",
  "messengers",
  "miniz_oxide",
