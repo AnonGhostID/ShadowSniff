@@ -10,32 +10,48 @@ use alloc::vec::Vec;
 use core::ops::Deref;
 
 /// Trait representing a generic file system interface.
-pub trait FileSystem {
+pub trait FileSystem: AsRef<Self> + Send + Sync {
     /// Reads the entire content of the file at the given path.
-    fn read_file(&self, path: &Path) -> Result<Vec<u8>, u32>;
+    fn read_file<P>(&self, path: P) -> Result<Vec<u8>, u32>
+    where
+        P: AsRef<Path>;
 
     /// Creates a single directory at the given path.
-    fn mkdir(&self, path: &Path) -> Result<(), u32>;
+    fn mkdir<P>(&self, path: P) -> Result<(), u32>
+    where
+        P: AsRef<Path>;
 
     /// Creates all missing directories in the given path recursively.
-    fn mkdirs(&self, path: &Path) -> Result<(), u32>;
+    fn mkdirs<P>(&self, path: P) -> Result<(), u32>
+    where
+        P: AsRef<Path>;
 
     /// Removes all contents inside the directory at the given path.
-    fn remove_dir_contents(&self, path: &Path) -> Result<(), u32>;
+    fn remove_dir_contents<P>(&self, path: P) -> Result<(), u32>
+    where
+        P: AsRef<Path>;
 
     /// Removes an empty directory at the given path.
-    fn remove_dir(&self, path: &Path) -> Result<(), u32>;
+    fn remove_dir<P>(&self, path: P) -> Result<(), u32>
+    where
+        P: AsRef<Path>;
 
     /// Removes a file at the given path.
-    fn remove_file(&self, path: &Path) -> Result<(), u32>;
+    fn remove_file<P>(&self, path: P) -> Result<(), u32>
+    where
+        P: AsRef<Path>;
 
     /// Creates a new empty file at the given path.
-    fn create_file(&self, path: &Path) -> Result<(), u32>;
+    fn create_file<P>(&self, path: P) -> Result<(), u32>
+    where
+        P: AsRef<Path>;
 
     /// Writes data to the file at the given path.
     ///
     /// If the parent directories or the file do not exist, they **should be created**.
-    fn write_file(&self, path: &Path, data: &[u8]) -> Result<(), u32>;
+    fn write_file<P>(&self, path: P, data: &[u8]) -> Result<(), u32>
+    where
+        P: AsRef<Path>;
 
     /// Lists files under the given directory path, filtered by the provided closure.
     ///
@@ -44,43 +60,63 @@ pub trait FileSystem {
     /// # Arguments
     ///
     /// * `filter` - A function that takes a file path and returns `true` to include it in the results.
-    fn list_files_filtered<F>(&self, path: &Path, filter: &F) -> Option<Vec<Path>>
+    fn list_files_filtered<F, P>(&self, path: P, filter: &F) -> Option<Vec<Path>>
     where
-        F: Fn(&Path) -> bool;
+        F: Fn(&Path) -> bool,
+        P: AsRef<Path>;
 
     /// Returns the creation and modification times of the file at the given path, if available.
     ///
     /// The returned tuple is `(creation_time, modification_time)`.
-    fn get_filetime(&self, path: &Path) -> Option<(u32, u32)>;
+    fn get_filetime<P>(&self, path: P) -> Option<(u32, u32)>
+    where
+        P: AsRef<Path>;
 
     /// Checks if a file or directory exists at the given path.
-    fn is_exists(&self, path: &Path) -> bool;
+    fn is_exists<P>(&self, path: P) -> bool
+    where
+        P: AsRef<Path>;
 
     /// Checks if the given path is a directory.
-    fn is_dir(&self, path: &Path) -> bool;
+    fn is_dir<P>(&self, path: P) -> bool
+    where
+        P: AsRef<Path>;
 
     /// Checks if the given path is a file.
-    fn is_file(&self, path: &Path) -> bool;
+    fn is_file<P>(&self, path: P) -> bool
+    where
+        P: AsRef<Path>;
 }
 
 /// Extension trait providing additional helper methods for file systems.
 pub trait FileSystemExt: FileSystem {
     /// Removes a directory and all its contents recursively.
-    fn remove_dir_all(&self, path: &Path) -> Result<(), u32>;
+    fn remove_dir_all<P>(&self, path: P) -> Result<(), u32>
+    where
+        P: AsRef<Path>;
 
     /// Lists all files and directories under the given directory path.
     ///
     /// Returns `None` if the directory cannot be listed.
-    fn list_files(&self, path: &Path) -> Option<Vec<Path>>;
+    fn list_files<P>(&self, path: P) -> Option<Vec<Path>>
+    where
+        P: AsRef<Path>;
 }
 
 impl<F: FileSystem> FileSystemExt for F {
-    fn remove_dir_all(&self, path: &Path) -> Result<(), u32> {
+    fn remove_dir_all<P>(&self, path: P) -> Result<(), u32>
+    where
+        P: AsRef<Path>,
+    {
+        let path = path.as_ref();
         self.remove_dir_contents(path)?;
         self.remove_dir(path)
     }
 
-    fn list_files(&self, path: &Path) -> Option<Vec<Path>> {
+    fn list_files<P>(&self, path: P) -> Option<Vec<Path>>
+    where
+        P: AsRef<Path>,
+    {
         self.list_files_filtered(path, &|_| true)
     }
 }
