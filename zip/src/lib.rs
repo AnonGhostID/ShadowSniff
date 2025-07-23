@@ -190,12 +190,12 @@ impl ZipArchive {
             return None;
         }
 
-        for file in filesystem.list_files(file)? {
-            if filesystem.is_dir(&file) {
-                self.add_folder_content_internal(filesystem, root, &file, use_parent)?
-            } else if filesystem.is_file(&file) {
-                let data = filesystem.read_file(&file).ok()?;
-                let file_time = filesystem.get_filetime(&file).unwrap_or((0, 0));
+        for file in &filesystem.list_files(file)? {
+            if filesystem.is_dir(file) {
+                self.add_folder_content_internal(filesystem, root, file, use_parent)?
+            } else if filesystem.is_file(file) {
+                let data = filesystem.read_file(file).ok()?;
+                let file_time = filesystem.get_filetime(file).unwrap_or((0, 0));
 
                 let rel_path = if use_parent {
                     file.strip_prefix(root.deref())?.strip_prefix("\\")?

