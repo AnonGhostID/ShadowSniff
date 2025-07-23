@@ -263,7 +263,7 @@ impl FileSystem for VirtualFileSystem {
         let prefix = if dir_str.ends_with('\\') {
             dir_str.clone()
         } else {
-            format!("{}\\", dir_str)
+            format!("{dir_str}\\")
         };
 
         if !map.contains_key(&dir_str) {

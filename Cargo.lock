@@ -97,6 +97,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "games"
+version = "0.1.0"
+dependencies = [
+ "collector",
+ "filesystem",
+ "obfstr",
+ "regedit",
+ "tasks",
+ "utils",
+ "windows-sys 0.59.0",
+]
+
+[[package]]
 name = "hollowing"
 version = "0.1.0"
 dependencies = [
@@ -254,6 +267,7 @@ dependencies = [
  "collector",
  "filesystem",
  "ftp",
+ "games",
  "ipinfo",
  "messengers",
  "miniz_oxide",
