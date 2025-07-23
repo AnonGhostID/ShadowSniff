@@ -16,6 +16,12 @@ pub struct VirtualFileSystem {
     entries: RwLock<BTreeMap<String, Entry>>,
 }
 
+impl AsRef<Self> for VirtualFileSystem {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
 impl Default for VirtualFileSystem {
     fn default() -> Self {
         let mut map = BTreeMap::new();
@@ -39,7 +45,11 @@ fn parent_path(s: &str) -> Option<String> {
 }
 
 impl FileSystem for VirtualFileSystem {
-    fn read_file(&self, path: &Path) -> Result<Vec<u8>, u32> {
+    fn read_file<P>(&self, path: P) -> Result<Vec<u8>, u32>
+    where
+        P: AsRef<Path>,
+    {
+        let path = path.as_ref();
         let map = self.entries.read();
 
         match map.get(&path.to_string()) {
@@ -49,7 +59,11 @@ impl FileSystem for VirtualFileSystem {
         }
     }
 
-    fn mkdir(&self, path: &Path) -> Result<(), u32> {
+    fn mkdir<P>(&self, path: P) -> Result<(), u32>
+    where
+        P: AsRef<Path>,
+    {
+        let path = path.as_ref();
         let path_str = path.to_string();
         let mut map = self.entries.write();
 
@@ -69,7 +83,11 @@ impl FileSystem for VirtualFileSystem {
         Ok(())
     }
 
-    fn mkdirs(&self, path: &Path) -> Result<(), u32> {
+    fn mkdirs<P>(&self, path: P) -> Result<(), u32>
+    where
+        P: AsRef<Path>,
+    {
+        let path = path.as_ref();
         let path_str = path.to_string();
         let mut map = self.entries.write();
 
@@ -92,7 +110,11 @@ impl FileSystem for VirtualFileSystem {
         Ok(())
     }
 
-    fn remove_dir_contents(&self, path: &Path) -> Result<(), u32> {
+    fn remove_dir_contents<P>(&self, path: P) -> Result<(), u32>
+    where
+        P: AsRef<Path>,
+    {
+        let path = path.as_ref();
         let path_str = path.to_string();
         let mut map = self.entries.write();
 
@@ -115,7 +137,11 @@ impl FileSystem for VirtualFileSystem {
         Ok(())
     }
 
-    fn remove_dir(&self, path: &Path) -> Result<(), u32> {
+    fn remove_dir<P>(&self, path: P) -> Result<(), u32>
+    where
+        P: AsRef<Path>,
+    {
+        let path = path.as_ref();
         let path_str = path.to_string();
         let mut map = self.entries.write();
 
@@ -139,7 +165,11 @@ impl FileSystem for VirtualFileSystem {
         }
     }
 
-    fn remove_file(&self, path: &Path) -> Result<(), u32> {
+    fn remove_file<P>(&self, path: P) -> Result<(), u32>
+    where
+        P: AsRef<Path>,
+    {
+        let path = path.as_ref();
         let path_str = path.to_string();
         let mut map = self.entries.write();
 
@@ -153,7 +183,11 @@ impl FileSystem for VirtualFileSystem {
         }
     }
 
-    fn create_file(&self, path: &Path) -> Result<(), u32> {
+    fn create_file<P>(&self, path: P) -> Result<(), u32>
+    where
+        P: AsRef<Path>,
+    {
+        let path = path.as_ref();
         let path_str = path.to_string();
         let mut map = self.entries.write();
 
@@ -173,12 +207,15 @@ impl FileSystem for VirtualFileSystem {
         Ok(())
     }
 
-    fn write_file(&self, path: &Path, data: &[u8]) -> Result<(), u32> {
+    fn write_file<P>(&self, path: P, data: &[u8]) -> Result<(), u32>
+    where
+        P: AsRef<Path>,
+    {
+        let path = path.as_ref();
         if let Some(parent) = path.parent()
             && !self.is_exists(&parent)
-            && let Err(e) = self.mkdirs(&parent)
         {
-            return Err(e);
+            self.mkdirs(parent)?
         }
 
         let path_str = path.to_string();
@@ -214,10 +251,12 @@ impl FileSystem for VirtualFileSystem {
         }
     }
 
-    fn list_files_filtered<F>(&self, path: &Path, filter: &F) -> Option<Vec<Path>>
+    fn list_files_filtered<F, P>(&self, path: P, filter: &F) -> Option<Vec<Path>>
     where
         F: Fn(&Path) -> bool,
+        P: AsRef<Path>
     {
+        let path = path.as_ref();
         let dir_str = path.to_string();
         let map = self.entries.read();
 
@@ -269,23 +308,38 @@ impl FileSystem for VirtualFileSystem {
         Some(results)
     }
 
-    fn get_filetime(&self, _: &Path) -> Option<(u32, u32)> {
+    fn get_filetime<P>(&self, _: P) -> Option<(u32, u32)>
+    where
+        P: AsRef<Path>,
+    {
         None
     }
 
-    fn is_exists(&self, path: &Path) -> bool {
+    fn is_exists<P>(&self, path: P) -> bool
+    where
+        P: AsRef<Path>,
+    {
+        let path = path.as_ref();
         let path_str = path.to_string();
         let map = self.entries.read();
         map.contains_key(&path_str)
     }
 
-    fn is_dir(&self, path: &Path) -> bool {
+    fn is_dir<P>(&self, path: P) -> bool
+    where
+        P: AsRef<Path>,
+    {
+        let path = path.as_ref();
         let path_str = path.to_string();
         let map = self.entries.read();
         matches!(map.get(&path_str), Some(Entry::Directory))
     }
 
-    fn is_file(&self, path: &Path) -> bool {
+    fn is_file<P>(&self, path: P) -> bool
+    where
+        P: AsRef<Path>,
+    {
+        let path = path.as_ref();
         let path_str = path.to_string();
         let map = self.entries.read();
         matches!(map.get(&path_str), Some(Entry::File { .. }))

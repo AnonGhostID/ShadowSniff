@@ -43,7 +43,7 @@ fn read_bookmarks<F>(filesystem: &F, profile: &Path) -> Option<Vec<Bookmark>>
 where
     F: FileSystem,
 {
-    let content = filesystem.read_file(&(profile / s!("Bookmarks"))).ok()?;
+    let content = filesystem.read_file(profile / s!("Bookmarks")).ok()?;
     let json = parse(&content).ok()?;
 
     let roots = json.get(s!("roots"))?;

