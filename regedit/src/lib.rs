@@ -4,11 +4,11 @@ extern crate alloc;
 
 use alloc::string::String;
 use alloc::vec::Vec;
+use core::iter::once;
 use core::ptr::null_mut;
 use core::slice;
-use utils::WideString;
 use windows_sys::Win32::Foundation::ERROR_SUCCESS;
-use windows_sys::Win32::System::Registry::{RegCloseKey, RegOpenKeyExW, RegQueryValueExW, HKEY, KEY_READ, REG_BINARY, REG_DWORD, REG_EXPAND_SZ, REG_QWORD, REG_SZ};
+use windows_sys::Win32::System::Registry::{RegCloseKey, RegOpenKeyExW, RegQueryValueExW, HKEY, KEY_READ, KEY_WOW64_64KEY, REG_BINARY, REG_DWORD, REG_EXPAND_SZ, REG_QWORD, REG_SZ};
 
 #[cfg_attr(test, derive(Debug))]
 pub enum RegistryValue {
@@ -55,12 +55,15 @@ fn string_from_utf16_null_terminated(bytes: &[u8]) -> String {
     String::from_utf16_lossy(&utf16[..len])
 }
 
-pub fn read_registry_value<S>(base: HKEY, subkey: S, value: S) -> Result<RegistryValue, u32>
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+pub fn read_registry_value<K, V>(base: HKEY, subkey: K, value: V) -> Result<RegistryValue, u32>
 where
-    S: AsRef<str>
+    K: AsRef<str>,
+    V: AsRef<str>,
 {
-    let subkey = subkey.as_ref().to_wide();
-    let value = value.as_ref().to_wide();
+    let subkey = to_wide(subkey.as_ref());
+    let value = to_wide(value.as_ref());
 
     unsafe {
         let mut hkey: HKEY = null_mut();
@@ -69,7 +72,7 @@ where
             base,
             subkey.as_ptr(),
             0,
-            KEY_READ,
+            KEY_READ | KEY_WOW64_64KEY,
             &mut hkey,
         );
 
@@ -95,7 +98,6 @@ where
         }
 
         let mut data = Vec::<u8>::with_capacity(data_len as usize);
-        data.set_len(data_len as usize);
 
         let result = RegQueryValueExW(
             hkey,
@@ -117,17 +119,26 @@ where
     }
 }
 
+
+fn to_wide(str: &str) -> Vec<u16> {
+    str.encode_utf16().chain(once(0)).collect()
+}
+
 #[cfg(test)]
 mod tests {
-
     extern crate std;
 
     use crate::read_registry_value;
-    use windows_sys::Win32::System::Registry::HKEY_CURRENT_USER;
+    use windows_sys::Win32::System::Registry::HKEY_LOCAL_MACHINE;
 
     #[test]
-    fn read_value() {
-        let value = read_registry_value(HKEY_CURRENT_USER, "SOFTWARE\\Value\\Steam\\SteamPath", "SteamPath").unwrap();
-        std::println!("{:?}", value);
+    fn read_product_name() {
+        let value = read_registry_value(
+            HKEY_LOCAL_MACHINE,
+            "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion",
+            "ProductName",
+        );
+
+        assert!(value.is_ok());
     }
 }
