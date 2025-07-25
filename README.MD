@@ -386,12 +386,16 @@ It includes methods to: `read_file`, `write_file`, `create_file` and [etc](https
 Two key implementations of this trait are included:
 
 1. `StorageFileSystem` (*Real Filesystem*)
-   Target: Windows filesystem
-   Purpose: Used to communicate with real user filesystem
+   
+   - Target: Windows filesystem
+   
+   - Purpose: Used to communicate with real user filesystem
 
 2. `VirtualFileSystem` (*In-Memory*)
-   Target: RAM (no disk interaction).
-   Purpose: Used for temp files (if not big) and construct log file
+   
+   - Target: RAM (no disk interaction).
+   
+   - Purpose: Used for temp files (if not big) and construct log file
 
 #### Copying Between Filesystems
 To support moving data across filesystems — e.g., from virtual memory to disk, or from a remote archive into the target output directory — several utility functions are provided.
