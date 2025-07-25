@@ -32,11 +32,11 @@ covering all essential data extraction capabilities for Windows targets.
   <table>
   <tr>
     <td align="center">
-      <img src="screenshot1.png" width="200"/><br/>
+      <img src="./.github/images/discord_internal.png" width="200"/><br/>
     <sub>Internal File</sub>
     </td>
     <td align="center">
-      <img src="screenshot2.png" width="200"/><br/>
+      <img src="./.github/images/discord_external.png" width="200"/><br/>
     <sub>External File</sub>
     </td>
   </tr>
@@ -45,11 +45,11 @@ covering all essential data extraction capabilities for Windows targets.
   <table>
   <tr>
     <td align="center">
-      <img src="screenshot1.png" width="200"/><br/>
+      <img src="./.github/images/telegram_internal.png" width="200"/><br/>
     <sub>Internal File</sub>
     </td>
     <td align="center">
-      <img src="screenshot2.png" width="200"/><br/>
+      <img src="./.github/images/telegram_external.png" width="200"/><br/>
     <sub>External File</sub>
     </td>
   </tr>
