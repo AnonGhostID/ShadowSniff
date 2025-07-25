@@ -107,7 +107,7 @@ impl ZipCompression {
 }
 
 impl ZipArchive {
-    pub fn comment<S>(&mut self, comment: S) -> &mut Self
+    pub fn comment<S>(mut self, comment: S) -> Self
     where
         S: AsRef<str>,
     {
@@ -115,7 +115,7 @@ impl ZipArchive {
         self
     }
 
-    pub fn password<S>(&mut self, password: S) -> &mut Self
+    pub fn password<S>(mut self, password: S) -> Self
     where
         S: AsRef<str>,
     {
@@ -124,12 +124,12 @@ impl ZipArchive {
         self
     }
 
-    pub fn compression(&mut self, compression: ZipCompression) -> &mut Self {
+    pub fn compression(mut self, compression: ZipCompression) -> Self {
         self.compression = compression;
         self
     }
 
-    pub fn add_folder_content<'a, 'b, F, P>(&mut self, filesystem: &F, root: P) -> &mut Self
+    pub fn add_folder_content<'a, 'b, F, P>(mut self, filesystem: &F, root: P) -> Self
     where
         P: Into<IntoPath<'a, 'b>>,
         F: FileSystem,
