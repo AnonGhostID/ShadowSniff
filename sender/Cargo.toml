@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 collector = { path = "../collector" }
+derive-new = "0.7.0"

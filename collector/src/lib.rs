@@ -91,9 +91,9 @@ pub trait Collector: Send + Sync {
     fn get_device(&self) -> &Self::Device;
 }
 
-pub struct DisplayCollector<T: Collector>(pub T);
+pub struct DisplayCollector<'a, T: Collector>(pub &'a T);
 
-impl<T: Collector> Display for DisplayCollector<T> {
+impl<T: Collector> Display for DisplayCollector<'_, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         write!(
             f,
