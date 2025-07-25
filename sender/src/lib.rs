@@ -7,8 +7,9 @@ use alloc::vec::Vec;
 use collector::Collector;
 
 pub enum SendError {
-    NetworkError,
-    UnsupportedLogFileError
+    Network,
+    UnsupportedLogFile,
+    LogFileTooBig
 }
 
 /// Represents a log file to be sent or processed.
