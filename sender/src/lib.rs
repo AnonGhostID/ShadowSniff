@@ -2,6 +2,7 @@
 
 extern crate alloc;
 pub mod telegram_bot;
+pub mod gofile;
 
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -26,7 +27,7 @@ pub enum LogFile {
 }
 
 /// A trait for sending log files to a destination service.
-pub trait LogSender {
+pub trait LogSender: Clone {
     /// Sends a log file to the destination service.
     ///
     /// # Parameters

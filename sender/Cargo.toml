@@ -9,3 +9,4 @@ derive-new = "0.7.0"
 indoc = "2.0.6"
 utils = { path = "../utils" }
 requests = { path = "../requests" }
+json = { path = "../json" }
