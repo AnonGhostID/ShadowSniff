@@ -284,6 +284,7 @@ dependencies = [
  "json",
  "requests",
  "utils",
+ "zip",
 ]
 
 [[package]]

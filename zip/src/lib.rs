@@ -5,6 +5,7 @@ mod create;
 
 use crate::create::create_zip;
 use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::mem::zeroed;
 use core::ops::Deref;
@@ -23,8 +24,8 @@ pub struct ZipEntry {
 #[derive(Default)]
 pub struct ZipArchive {
     entries: Vec<ZipEntry>,
-    comment: Option<String>,
-    password: Option<String>,
+    comment: Option<Arc<str>>,
+    password: Option<Arc<str>>,
     compression: ZipCompression,
 }
 
@@ -104,7 +105,7 @@ impl ZipArchive {
     where
         S: AsRef<str>,
     {
-        self.comment = Some(comment.as_ref().to_string());
+        self.comment = Some(Arc::from(comment.as_ref()));
         self
     }
 
@@ -113,7 +114,7 @@ impl ZipArchive {
         S: AsRef<str>,
     {
         assert!(password.as_ref().is_ascii(), "Password must be ASCII only");
-        self.password = Some(password.as_ref().to_string());
+        self.password = Some(Arc::from(password.as_ref()));
         self
     }
 
@@ -216,6 +217,14 @@ impl ZipArchive {
         Some(())
     }
 
+    pub fn get_password(&self) -> Option<Arc<str>> {
+        self.password.clone()
+    }
+
+    pub fn get_comment(&self) -> Option<Arc<str>> {
+        self.comment.clone()
+    }
+    
     pub fn create(&self) -> Vec<u8> {
         create_zip(self)
     }
