@@ -29,7 +29,31 @@ covering all essential data extraction capabilities for Windows targets.
 ### Log Sending
 
 - [x] Discord webhook
+  <table>
+  <tr>
+    <td align="center">
+      <img src="screenshot1.png" width="200"/><br/>
+    <sub>Internal File</sub>
+    </td>
+    <td align="center">
+      <img src="screenshot2.png" width="200"/><br/>
+    <sub>External File</sub>
+    </td>
+  </tr>
+  </table>
 - [x] Telegram bot
+  <table>
+  <tr>
+    <td align="center">
+      <img src="screenshot1.png" width="200"/><br/>
+    <sub>Internal File</sub>
+    </td>
+    <td align="center">
+      <img src="screenshot2.png" width="200"/><br/>
+    <sub>External File</sub>
+    </td>
+  </tr>
+  </table>
 
 ### Browsers
 
