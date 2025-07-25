@@ -3,9 +3,8 @@ use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use alloc::{format, vec};
-use collector::{Collector, Device};
+use collector::{Collector, Device, DisplayCollector};
 use derive_new::new;
-use indoc::formatdoc;
 use requests::{BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
 use utils::format_size;
 
@@ -20,11 +19,7 @@ where
     P: AsRef<str>,
     C: Collector
 {
-    let caption = formatdoc! {
-        r#"
-            hey surr!
-        "#,
-    };
+    let caption = DisplayCollector(collector).to_string();
 
     let link = match log {
         LogFile::ExternalLink((link, size)) => Some(
