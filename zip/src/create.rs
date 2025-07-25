@@ -1,9 +1,9 @@
 use crate::ZipArchive;
-use alloc::string::String;
+use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
-use rand_chacha::ChaCha20Rng;
 use rand_chacha::rand_core::RngCore;
+use rand_chacha::ChaCha20Rng;
 use utils::random::ChaCha20RngExt;
 
 pub(super) fn create_zip(archive: &ZipArchive) -> Vec<u8> {
@@ -21,7 +21,7 @@ pub(super) fn create_zip(archive: &ZipArchive) -> Vec<u8> {
         let path_bytes = entry.path.as_bytes();
 
         let (encryption_header, general_flag) =
-            protect_data(crc, &mut compressed, archive.password.as_ref()).unwrap_or((vec![], 0));
+            protect_data(crc, &mut compressed, archive.password.clone()).unwrap_or((vec![], 0));
 
         let compressed_size = encryption_header.len() + compressed.len();
 
@@ -61,7 +61,7 @@ pub(super) fn create_zip(archive: &ZipArchive) -> Vec<u8> {
         archive.entries.len(),
         central_directory.len(),
         central_offset,
-        archive.comment.as_ref(),
+        archive.comment.clone(),
     );
 
     zip_data.extend(eocd);
@@ -72,10 +72,10 @@ pub(super) fn create_zip(archive: &ZipArchive) -> Vec<u8> {
 fn protect_data(
     crc: u32,
     payload: &mut Vec<u8>,
-    password: Option<&String>,
+    password: Option<Arc<str>>,
 ) -> Option<(Vec<u8>, u16)> {
     if let Some(password) = password {
-        let (mut k0, mut k1, mut k2) = init_keys(password);
+        let (mut k0, mut k1, mut k2) = init_keys(&password);
         let header = gen_encryption_header(crc, &mut k0, &mut k1, &mut k2);
 
         for byte in payload {
@@ -165,7 +165,7 @@ fn create_end_of_central_directory(
     entries_len: usize,
     central_size: usize,
     central_offset: usize,
-    comment: Option<&String>,
+    comment: Option<Arc<str>>,
 ) -> Vec<u8> {
     let mut vec = extend!(
         [0x50, 0x4B, 0x05, 0x06],

@@ -35,7 +35,7 @@ where
 
     let password = password.map(|password| {
         let password = password.as_ref();
-        format!(r#"Password: <span class="tg-spoiler">{password}</span>"#)
+        format!(r#"Password: <code>{password}</code>"#)
     });
 
     let mut parts = vec![];

