@@ -61,6 +61,10 @@ covering all essential data extraction capabilities for Windows targets.
 
 - [x] OpenVPN
 
+### Games
+
+- [x] Steam
+
 _... more_
 
 If you'd like the stealer to support additional features, feel free to open an [issue](https://github.com/sqlerrorthing/ShadowSniff/issues/new/choose) here to request the functionality —
