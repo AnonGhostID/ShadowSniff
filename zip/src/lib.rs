@@ -29,6 +29,12 @@ pub struct ZipArchive {
     compression: ZipCompression,
 }
 
+impl AsRef<ZipArchive> for ZipArchive {
+    fn as_ref(&self) -> &ZipArchive {
+        self
+    }
+}
+
 impl Deref for ZipEntry {
     type Target = Vec<u8>;
 
@@ -224,7 +230,7 @@ impl ZipArchive {
     pub fn get_comment(&self) -> Option<Arc<str>> {
         self.comment.clone()
     }
-    
+
     pub fn create(&self) -> Vec<u8> {
         create_zip(self)
     }
