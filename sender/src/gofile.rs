@@ -42,7 +42,7 @@ fn upload(name: &str, bytes: Vec<u8>) -> Option<String> {
 impl<T: LogSender> LogSender for Gofile<T> {
     fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
     where
-        P: AsRef<str>,
+        P: AsRef<str> + Clone,
         C: Collector
     {
         match log_file {

