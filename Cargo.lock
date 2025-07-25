@@ -278,6 +278,8 @@ version = "0.1.0"
 dependencies = [
  "collector",
  "derive-new",
+ "indoc",
+ "utils",
 ]
 
 [[package]]

