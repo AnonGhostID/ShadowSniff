@@ -4,8 +4,8 @@ extern crate alloc;
 
 use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
-use alloc::vec;
 use alloc::vec::Vec;
+use alloc::{format, vec};
 use core::iter::once;
 use core::mem::zeroed;
 use core::ptr::{null, null_mut};
@@ -30,6 +30,69 @@ macro_rules! close {
     };
 }
 
+pub struct MultipartBuilder {
+    boundary: String,
+    body: Vec<u8>,
+}
+
+impl MultipartBuilder {
+    pub fn new(boundary: &str) -> Self {
+        MultipartBuilder {
+            boundary: boundary.to_string(),
+            body: Vec::new(),
+        }
+    }
+
+    pub fn write_text_field(&mut self, name: &str, value: &str) {
+        self.body.extend_from_slice(b"--");
+        self.body.extend_from_slice(self.boundary.as_bytes());
+        self.body.extend_from_slice(b"\r\n");
+
+        self.body.extend_from_slice(b"Content-Disposition: form-data; name=\"");
+        self.body.extend_from_slice(name.as_bytes());
+        self.body.extend_from_slice(b"\"\r\n\r\n");
+
+        self.body.extend_from_slice(value.as_bytes());
+        self.body.extend_from_slice(b"\r\n");
+    }
+
+    pub fn write_file_field(
+        &mut self,
+        name: &str,
+        filename: &str,
+        content_type: &str,
+        data: &[u8],
+    ) {
+        self.body.extend_from_slice(b"--");
+        self.body.extend_from_slice(self.boundary.as_bytes());
+        self.body.extend_from_slice(b"\r\n");
+
+        self.body.extend_from_slice(b"Content-Disposition: form-data; name=\"");
+        self.body.extend_from_slice(name.as_bytes());
+        self.body.extend_from_slice(b"\"; filename=\"");
+        self.body.extend_from_slice(filename.as_bytes());
+        self.body.extend_from_slice(b"\"\r\n");
+
+        self.body.extend_from_slice(b"Content-Type: ");
+        self.body.extend_from_slice(content_type.as_bytes());
+        self.body.extend_from_slice(b"\r\n\r\n");
+
+        self.body.extend_from_slice(data);
+        self.body.extend_from_slice(b"\r\n");
+    }
+
+    pub fn finish(mut self) -> Vec<u8> {
+        self.body.extend_from_slice(b"--");
+        self.body.extend_from_slice(self.boundary.as_bytes());
+        self.body.extend_from_slice(b"--\r\n");
+        self.body
+    }
+
+    pub fn content_type(&self) -> String {
+        format!("multipart/form-data; boundary={}", self.boundary)
+    }
+}
+
 pub type ResponseBody = Vec<u8>;
 
 pub trait ResponseBodyExt {
@@ -49,6 +112,7 @@ pub struct Request {
     body: Option<Vec<u8>>,
 }
 
+#[derive(Debug)]
 pub struct Response {
     status_code: u16,
     headers: BTreeMap<String, String>,
