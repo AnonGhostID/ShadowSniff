@@ -9,6 +9,8 @@ dependencies = [
  "collector",
  "filesystem",
  "ipinfo",
+ "rand_chacha",
+ "rand_core",
  "sender",
  "shadowsniff",
  "tasks",
