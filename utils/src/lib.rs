@@ -4,6 +4,7 @@
 
 extern crate alloc;
 
+use alloc::format;
 use alloc::string::String;
 use core::ops::Deref;
 use filesystem::FileSystem;
@@ -53,4 +54,15 @@ where
     }
 
     Some(flag)
+}
+
+pub fn format_size(bytes: u64) -> String {
+    let units = ["B", "KB", "MB", "GB", "TB", "PB"];
+    let mut size = bytes as f64;
+    let mut i = 0;
+    while size >= 1024.0 && i < units.len() - 1 {
+        size /= 1024.0;
+        i += 1;
+    }
+    format!("{:.2} {}", size, units[i])
 }
