@@ -40,13 +40,13 @@ fn upload(name: &str, bytes: Vec<u8>) -> Option<String> {
 }
 
 impl<T: LogSender> LogSender for Gofile<T> {
-    fn send<P, C>(&self, zip_archive: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
+    fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
     where
         P: AsRef<str>,
         C: Collector
     {
-        match zip_archive {
-            LogFile::ExternalLink(_) => self.inner.send(zip_archive, password, collector),
+        match log_file {
+            LogFile::ExternalLink(_) => self.inner.send(log_file, password, collector),
             LogFile::ZipArchive(archive) => {
                 let size = archive.len();
                 let link = upload("log.zip", archive)

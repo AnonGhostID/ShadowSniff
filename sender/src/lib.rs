@@ -26,20 +26,26 @@ pub enum LogFile {
     ZipArchive(Vec<u8>)
 }
 
+impl From<Vec<u8>> for LogFile {
+    fn from(value: Vec<u8>) -> Self {
+        LogFile::ZipArchive(value)
+    }
+}
+
 /// A trait for sending log files to a destination service.
 pub trait LogSender: Clone {
     /// Sends a log file to the destination service.
     ///
     /// # Parameters
     ///
-    /// - `zip_archive`: A [`LogFile`] enum representing the log file to send.
+    /// - `log_file`: A [`LogFile`] enum representing the log file to send.
     /// - `password`: An [`Option<String>`] that specifies the password for the archive, if it is password-protected.
     /// - `collector`: A type that implements the [`Collector`] trait, providing log-related metadata or additional context.
     ///
     /// # Returns
     ///
     /// - `Result<(), SendError>`: Returns `Ok(())` if the log was sent successfully, or a [`SendError`] if the operation failed.
-    fn send<P, C>(&self, zip_archive: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
+    fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
     where
         P: AsRef<str>,
         C: Collector;
