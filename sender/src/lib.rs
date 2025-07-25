@@ -5,6 +5,7 @@ pub mod telegram_bot;
 pub mod gofile;
 pub mod size_fallback;
 pub mod discord_webhook;
+pub mod fallback;
 
 use alloc::string::String;
 use alloc::vec::Vec;
