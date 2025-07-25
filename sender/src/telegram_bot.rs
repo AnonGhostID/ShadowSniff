@@ -4,11 +4,12 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use alloc::{format, vec};
 use collector::{Collector, Device, DisplayCollector};
+use core::fmt::{Display, Error, Formatter};
 use derive_new::new;
 use requests::{BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
 use utils::format_size;
 
-#[derive(new)]
+#[derive(new, Clone)]
 pub struct TelegramBot {
     chat_id: Arc<str>,
     token: Arc<str>
@@ -45,6 +46,7 @@ where
     (caption, thumbnail)
 }
 
+#[derive(Default)]
 pub struct MediaGroup {
     items: Vec<MediaItem>,
 }
@@ -57,10 +59,6 @@ pub struct MediaItem {
 }
 
 impl MediaGroup {
-    pub fn new() -> Self {
-        Self { items: Vec::new() }
-    }
-
     pub fn add_document(&mut self, media_name: impl Into<String>, caption: Option<String>) -> &mut Self {
         self.items.push(MediaItem {
             media_type: "document".to_string(),
@@ -80,8 +78,10 @@ impl MediaGroup {
         });
         self
     }
+}
 
-    pub fn to_string(&self) -> String {
+impl Display for MediaGroup {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         let mut json_parts = Vec::new();
 
         for item in &self.items {
@@ -92,18 +92,18 @@ impl MediaGroup {
 
             if let Some(caption) = &item.caption {
                 let escaped = caption.replace('\\', "\\\\").replace('"', "\\\"");
-                fields.push(format!(r#""caption": "{}""#, escaped));
+                fields.push(format!(r#""caption": "{escaped}""#));
             }
 
             if let Some(parse_mode) = &item.parse_mode {
-                fields.push(format!(r#""parse_mode": "{}""#, parse_mode));
+                fields.push(format!(r#""parse_mode": "{parse_mode}""#));
             }
 
             let obj = format!("{{{}}}", fields.join(","));
             json_parts.push(obj);
         }
 
-        format!("[{}]", json_parts.join(","))
+        write!(f, "{}", format_args!("[{}]", json_parts.join(",")))
     }
 }
 
@@ -113,7 +113,7 @@ impl TelegramBot {
 
         builder.write_text_field("chat_id", &self.chat_id);
 
-        let mut media_group = MediaGroup::new();
+        let mut media_group = MediaGroup::default();
 
         if let Some(screenshot_bytes) = &screenshot {
             media_group.add_document("screenshot", Some(caption));
