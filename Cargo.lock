@@ -9,6 +9,9 @@ dependencies = [
  "collector",
  "filesystem",
  "ipinfo",
+ "rand_chacha",
+ "rand_core",
+ "sender",
  "shadowsniff",
  "tasks",
  "utils",
@@ -64,6 +67,7 @@ version = "0.1.0"
 dependencies = [
  "indoc",
  "paste",
+ "spin",
 ]
 
 [[package]]
@@ -74,6 +78,17 @@ dependencies = [
  "filesystem",
  "obfstr",
  "utils",
+]
+
+[[package]]
+name = "derive-new"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2cdc8d50f426189eef89dac62fabfa0abb27d5cc008f25bf4156a0203325becc"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -258,6 +273,18 @@ name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
+
+[[package]]
+name = "sender"
+version = "0.1.0"
+dependencies = [
+ "collector",
+ "derive-new",
+ "indoc",
+ "json",
+ "requests",
+ "utils",
+]
 
 [[package]]
 name = "shadowsniff"

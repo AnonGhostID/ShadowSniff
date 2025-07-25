@@ -28,8 +28,8 @@ covering all essential data extraction capabilities for Windows targets.
 
 ### Log Sending
 
-- [ ] Discord webhook
-- [ ] Telegram bot
+- [x] Discord webhook
+- [x] Telegram bot
 
 ### Browsers
 

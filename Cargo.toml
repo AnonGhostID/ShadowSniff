@@ -21,7 +21,8 @@ members = [
     "collector",
     "zip",
     "filesystem",
-    "regedit"
+    "regedit",
+    "sender"
 ]
 
 [profile.release]
@@ -46,3 +47,6 @@ ipinfo = { path = "ipinfo" }
 collector = { path = "collector" }
 zip = { path = "zip" }
 filesystem = { path = "filesystem" }
+sender = { path = "sender" }
+rand_chacha = { version = "0.9.0", default-features = false }
+rand_core = { version = "0.9.3", default-features = false }

