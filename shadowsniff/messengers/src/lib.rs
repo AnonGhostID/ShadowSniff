@@ -13,6 +13,8 @@ use collector::Collector;
 use filesystem::FileSystem;
 use tasks::{composite_task, impl_composite_task_runner, CompositeTask, Task};
 
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 pub struct MessengersTask<C: Collector, F: FileSystem> {
     inner: CompositeTask<C, F>,
 }

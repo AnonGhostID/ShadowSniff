@@ -4,6 +4,7 @@ extern crate alloc;
 pub mod telegram_bot;
 pub mod gofile;
 pub mod size_fallback;
+pub mod discord_webhook;
 
 use alloc::string::String;
 use alloc::vec::Vec;
