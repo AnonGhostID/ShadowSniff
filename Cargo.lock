@@ -369,7 +369,9 @@ name = "vpn"
 version = "0.1.0"
 dependencies = [
  "collector",
+ "derive-new",
  "filesystem",
+ "json",
  "obfstr",
  "tasks",
  "utils",

@@ -2,10 +2,12 @@
 
 extern crate alloc;
 mod openvpn;
+mod outline;
 
 use crate::alloc::borrow::ToOwned;
 
 use crate::openvpn::OpenVPN;
+use crate::outline::OutlineVPN;
 use alloc::vec;
 use collector::Collector;
 use filesystem::FileSystem;
@@ -20,7 +22,8 @@ impl<C: Collector, F: FileSystem> Default for VpnTask<C, F> {
     fn default() -> Self {
         Self {
             inner: composite_task!(
-                OpenVPN
+                OpenVPN,
+                OutlineVPN
             )
         }
     }
