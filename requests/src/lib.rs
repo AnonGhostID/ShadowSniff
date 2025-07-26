@@ -30,6 +30,34 @@ macro_rules! close {
     };
 }
 
+#[macro_export]
+macro_rules! write_file_field {
+    ($builder:expr, $name:expr, $filename:expr, $content_type:expr, $file:expr) => {
+        $builder.write_file_field(
+            obfstr::obfstr!($name),
+            obfstr::obfstr!($filename),
+            obfstr::obfstr!($content_type),
+            $file
+        );
+    };
+}
+
+#[macro_export]
+macro_rules! write_text_field {
+    ($builder:expr, $name:expr, $value:expr) => {
+        $builder.write_text_field(
+            obfstr::obfstr!($name),
+            obfstr::obfstr!($value),
+        );
+    };
+    ($builder:expr, $name:expr => $value:expr) => {
+        $builder.write_text_field(
+            obfstr::obfstr!($name),
+            $value,
+        );
+    };
+}
+
 pub struct MultipartBuilder {
     boundary: String,
     body: Vec<u8>,

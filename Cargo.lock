@@ -284,6 +284,7 @@ dependencies = [
  "derive-new",
  "indoc",
  "json",
+ "obfstr",
  "requests",
  "utils",
  "zip",
