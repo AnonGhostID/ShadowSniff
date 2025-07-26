@@ -80,30 +80,32 @@ impl MediaGroup {
     }
 }
 
-impl Display for MediaGroup {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        let mut json_parts = Vec::new();
+impl Display for MediaItem {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(f, r#"{{"type": "{}","media": "{}""#, self.media_type, self.media)?;
 
-        for item in &self.items {
-            let mut fields = vec![
-                format!(r#""type": "{}""#, item.media_type),
-                format!(r#""media": "{}""#, item.media),
-            ];
-
-            if let Some(caption) = &item.caption {
-                let escaped = caption.replace('\\', "\\\\").replace('"', "\\\"");
-                fields.push(format!(r#""caption": "{escaped}""#));
-            }
-
-            if let Some(parse_mode) = &item.parse_mode {
-                fields.push(format!(r#""parse_mode": "{parse_mode}""#));
-            }
-
-            let obj = format!("{{{}}}", fields.join(","));
-            json_parts.push(obj);
+        if let Some(caption) = &self.caption {
+            let escaped = caption.replace('\\', "\\\\").replace('"', "\\\"");
+            write!(f, r#","caption": "{escaped}""#)?;
         }
 
-        write!(f, "{}", format_args!("[{}]", json_parts.join(",")))
+        if let Some(parse_mode) = &self.parse_mode {
+            write!(f, r#","parse_mode": "{parse_mode}""#)?;
+        }
+
+        write!(f, "}}")
+    }
+}
+
+impl Display for MediaGroup {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        let json = self.items
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(",");
+
+        write!(f, "[{json}]")
     }
 }
 
