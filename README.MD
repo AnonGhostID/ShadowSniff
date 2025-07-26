@@ -84,6 +84,7 @@ covering all essential data extraction capabilities for Windows targets.
 ### VPN
 
 - [x] OpenVPN
+- [x] Outline
 
 ### Games
 
