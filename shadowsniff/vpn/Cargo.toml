@@ -7,3 +7,5 @@ edition = "2024"
 tasks = { path = "../../tasks" }
 utils = { path = "../../utils" }
 obfstr = "0.4.4"
+filesystem = { path = "../../filesystem" }
+collector = { path = "../../collector" }

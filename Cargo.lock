@@ -305,6 +305,7 @@ dependencies = [
  "obfstr",
  "tasks",
  "utils",
+ "vpn",
  "windows-sys 0.59.0",
 ]
 
@@ -361,6 +362,17 @@ dependencies = [
  "rand_chacha",
  "rand_core",
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "vpn"
+version = "0.1.0"
+dependencies = [
+ "collector",
+ "filesystem",
+ "obfstr",
+ "tasks",
+ "utils",
 ]
 
 [[package]]
