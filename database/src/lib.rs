@@ -7,14 +7,14 @@ use crate::bindings::Sqlite3BindingsReader;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt::{Display, Formatter};
-use utils::path::Path;
+use filesystem::path::Path;
 
 pub enum Value {
     String(String),
     Integer(i64),
     Float(f64),
     Blob(Vec<u8>),
-    Null
+    Null,
 }
 
 impl Value {
@@ -93,7 +93,7 @@ pub trait TableRecord {
 }
 
 pub enum Databases {
-    Sqlite
+    Sqlite,
 }
 
 impl Databases {
