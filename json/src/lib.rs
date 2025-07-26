@@ -4,8 +4,8 @@ extern crate alloc;
 mod parser;
 mod tokenize;
 
-use crate::parser::{TokenParseError, parse_tokens};
-use crate::tokenize::{TokenizeError, tokenize};
+use crate::parser::{parse_tokens, TokenParseError};
+use crate::tokenize::{tokenize, TokenizeError};
 use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
@@ -135,13 +135,14 @@ where
 }
 
 pub fn parse(input: &[u8]) -> Result<Value, ParseError> {
-    parse_str(str::from_utf8(input).unwrap())
+    parse_str(str::from_utf8(input).map_err(|_| ParseError::InvalidEncoding)?)
 }
 
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(any(test, debug_assertions), derive(Debug))]
 pub enum ParseError {
     TokenizeError(TokenizeError),
     ParseError(TokenParseError),
+    InvalidEncoding,
 }
 
 impl From<TokenParseError> for ParseError {

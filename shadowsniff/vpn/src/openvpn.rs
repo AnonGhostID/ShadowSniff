@@ -1,5 +1,4 @@
 use crate::alloc::borrow::ToOwned;
-use alloc::vec::Vec;
 use collector::{Collector, Vpn};
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
