@@ -54,7 +54,7 @@ impl FileSystem for VirtualFileSystem {
 
         match map.get(&path.to_string()) {
             Some(Entry::File { data, .. }) => Ok(data.clone()),
-            Some(Entry::Directory { .. }) => Err(1), // error: is a directory
+            Some(Entry::Directory) => Err(1), // error: is a directory
             None => Err(2),                          // error: not found
         }
     }

