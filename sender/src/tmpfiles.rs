@@ -1,5 +1,5 @@
 use crate::external_upload::{base_upload, Uploader};
-use crate::gofile::GofileSender;
+use crate::gofile::GofileUploader;
 use crate::{LogContent, LogFile, LogSender, SendError};
 use alloc::string::String;
 use collector::Collector;
@@ -15,11 +15,11 @@ use requests::{BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
 /// - The maximum supported log file size is **100 MB**.
 /// - Uploaded files will be automatically **deleted 60 minutes** after upload.
 #[derive(Clone)]
-pub struct TmpFiles<T: LogSender> {
+pub struct TmpFilesUploader<T: LogSender> {
     inner: Uploader<T>,
 }
 
-impl<T: LogSender> TmpFiles<T> {
+impl<T: LogSender> TmpFilesUploader<T> {
     pub fn new(inner: T) -> Self {
         Self {
             inner: Uploader::new(inner, upload),
@@ -40,7 +40,7 @@ fn upload(name: &str, bytes: &[u8]) -> Option<String> {
     )
 }
 
-impl<T: LogSender> LogSender for TmpFiles<T> {
+impl<T: LogSender> LogSender for TmpFilesUploader<T> {
     delegate! {
         to self.inner {
             fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>

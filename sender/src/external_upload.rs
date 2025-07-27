@@ -1,4 +1,4 @@
-use crate::tmpfiles::TmpFiles;
+use crate::tmpfiles::TmpFilesUploader;
 use crate::{LogContent, LogFile, LogSender, SendError};
 use alloc::string::String;
 use alloc::vec::Vec;
