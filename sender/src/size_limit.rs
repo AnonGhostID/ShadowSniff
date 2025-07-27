@@ -1,4 +1,4 @@
-use crate::{LogFile, LogSender, SendError};
+use crate::{LogContent, LogFile, LogSender, SendError};
 use collector::Collector;
 use derive_new::new;
 
@@ -24,11 +24,11 @@ impl<T: LogSender> LogSender for SizeLimitSender<T> {
         P: AsRef<str> + Clone,
         C: Collector
     {
-        match &log_file {
-            LogFile::ZipArchive(data) if data.len() > self.max_size_bytes => {
+        match &log_file.content {
+            LogContent::ZipArchive(data) if data.len() > self.max_size_bytes => {
                 Err(SendError::LogFileTooBig)
             }
-            LogFile::ExternalLink((_, size)) if self.check_external_link_size && *size > self.max_size_bytes  => {
+            LogContent::ExternalLink((_, size)) if self.check_external_link_size && *size > self.max_size_bytes  => {
                 Err(SendError::LogFileTooBig)
             }
             _ => self.inner.send(log_file, password, collector),
