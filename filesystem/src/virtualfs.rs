@@ -55,7 +55,7 @@ impl FileSystem for VirtualFileSystem {
         match map.get(&path.to_string()) {
             Some(Entry::File { data, .. }) => Ok(data.clone()),
             Some(Entry::Directory) => Err(1), // error: is a directory
-            None => Err(2),                          // error: not found
+            None => Err(2),                   // error: not found
         }
     }
 
@@ -254,7 +254,7 @@ impl FileSystem for VirtualFileSystem {
     fn list_files_filtered<F, P>(&self, path: P, filter: &F) -> Option<Vec<Path>>
     where
         F: Fn(&Path) -> bool,
-        P: AsRef<Path>
+        P: AsRef<Path>,
     {
         let path = path.as_ref();
         let dir_str = path.to_string();

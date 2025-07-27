@@ -49,10 +49,7 @@ impl Path {
     where
         S: AsRef<str>,
     {
-        path
-            .as_ref()
-            .to_string()
-            .into()
+        path.as_ref().to_string().into()
     }
 
     pub fn as_absolute(&self) -> Path {

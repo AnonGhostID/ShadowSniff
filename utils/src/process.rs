@@ -7,12 +7,19 @@ use core::iter::once;
 use core::mem::zeroed;
 use core::ptr::null_mut;
 use filesystem::path::Path;
-use windows_sys::Win32::Foundation::{CloseHandle, GetLastError, SetHandleInformation, HANDLE, HANDLE_FLAG_INHERIT, INVALID_HANDLE_VALUE, MAX_PATH, TRUE};
+use windows_sys::Win32::Foundation::{
+    CloseHandle, GetLastError, SetHandleInformation, HANDLE, HANDLE_FLAG_INHERIT, INVALID_HANDLE_VALUE,
+    MAX_PATH, TRUE,
+};
 use windows_sys::Win32::Security::SECURITY_ATTRIBUTES;
 use windows_sys::Win32::Storage::FileSystem::ReadFile;
 use windows_sys::Win32::System::Pipes::CreatePipe;
 use windows_sys::Win32::System::ProcessStatus::{K32EnumProcesses, K32GetModuleBaseNameA};
-use windows_sys::Win32::System::Threading::{CreateProcessW, OpenProcess, QueryFullProcessImageNameW, CREATE_NO_WINDOW, PROCESS_INFORMATION, PROCESS_QUERY_INFORMATION, PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_VM_READ, STARTF_USESTDHANDLES, STARTUPINFOW};
+use windows_sys::Win32::System::Threading::{
+    CreateProcessW, OpenProcess, QueryFullProcessImageNameW, CREATE_NO_WINDOW, PROCESS_INFORMATION,
+    PROCESS_QUERY_INFORMATION, PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_VM_READ,
+    STARTF_USESTDHANDLES, STARTUPINFOW,
+};
 
 pub unsafe fn run_file(file: &Path) -> Result<Vec<u8>, u32> {
     run_process(&file.to_string())
@@ -120,9 +127,7 @@ pub fn get_process_list() -> Vec<ProcessInfo> {
             continue;
         }
 
-        let handle = unsafe {
-            OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid)
-        };
+        let handle = unsafe { OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid) };
 
         if handle == null_mut() {
             continue;
@@ -140,9 +145,7 @@ pub fn get_process_list() -> Vec<ProcessInfo> {
         };
 
         if len > 0 {
-            let name = unsafe {
-                CStr::from_ptr(name_buf.as_ptr() as *const i8)
-            };
+            let name = unsafe { CStr::from_ptr(name_buf.as_ptr() as *const i8) };
 
             if let Ok(name_str) = name.to_str() {
                 result.push(ProcessInfo {
@@ -152,9 +155,7 @@ pub fn get_process_list() -> Vec<ProcessInfo> {
             }
         }
 
-        unsafe {
-            CloseHandle(handle)
-        };
+        unsafe { CloseHandle(handle) };
     }
 
     result

