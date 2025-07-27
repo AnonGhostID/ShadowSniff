@@ -1,4 +1,4 @@
-use crate::{LogContent, LogFile, LogSender, SendError};
+use crate::{ExternalLink, LogContent, LogFile, LogSender, SendError};
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -13,8 +13,20 @@ use requests::{
 };
 use utils::format_size;
 
+const TELEGRAM_MAX_FILE_SIZE: usize = 2 * 1024 * 1024 * 1024;
+
+/// A log sender that transmits data via a Telegram bot using the Bot API.
+///
+/// # Fields
+///
+/// - `chat_id`: The unique identifier of the target Telegram chat or channel (as a string).
+/// - `token`: The bot token obtained from [BotFather](https://t.me/BotFather).
+///
+/// # Notes
+///
+/// - Telegram has a file upload limit of 2 GB per file.
 #[derive(new, Clone)]
-pub struct TelegramBot {
+pub struct TelegramBotSender {
     chat_id: Arc<str>,
     token: Arc<str>,
 }
@@ -31,9 +43,8 @@ where
     let caption = DisplayCollector(collector).to_string();
 
     let link = match log_content {
-        LogContent::ExternalLink((link, size)) => Some(format!(
-            r#"<a href="{}">Download [{}]</a>"#,
-            link,
+        LogContent::ExternalLink(ExternalLink { service_name, link, size }) => Some(format!(
+            r#"<a href="{link}">Download from {service_name} [{}]</a>"#,
             format_size(*size as _)
         )),
         _ => None,
@@ -136,7 +147,7 @@ impl Display for MediaGroup {
     }
 }
 
-impl TelegramBot {
+impl TelegramBotSender {
     fn send_as_file(
         &self,
         log_name: &str,
@@ -240,7 +251,7 @@ fn combine_caption_and_thumbnail(caption: &str, thumbnail: Option<String>) -> St
     }
 }
 
-impl LogSender for TelegramBot {
+impl LogSender for TelegramBotSender {
     fn send<P, C>(
         &self,
         log_file: LogFile,
@@ -251,6 +262,12 @@ impl LogSender for TelegramBot {
         P: AsRef<str> + Clone,
         C: Collector,
     {
+        if let LogContent::ZipArchive(archive) = &log_file.content {
+            if archive.len() >= TELEGRAM_MAX_FILE_SIZE {
+                return Err(SendError::LogFileTooBig);
+            }
+        }
+
         let (caption, thumbnail) = generate_caption(&log_file.content, password, collector);
         let LogFile { name, content } = log_file;
 

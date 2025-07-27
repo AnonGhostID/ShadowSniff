@@ -2,10 +2,13 @@
 
 extern crate alloc;
 pub mod discord_webhook;
+pub mod external_upload;
 pub mod fallback;
 pub mod gofile;
 pub mod size_fallback;
+pub mod size_limit;
 pub mod telegram_bot;
+pub mod tmpfiles;
 
 use alloc::string::String;
 use alloc::sync::Arc;
@@ -21,13 +24,22 @@ pub enum SendError {
     LogFileTooBig,
 }
 
+/// Represents a link to an external log file with associated metadata.
+#[derive(new, Clone)]
+pub struct ExternalLink {
+    /// The service name where the log file is located.
+    pub service_name: Arc<str>,
+    /// The URL pointing to the `.zip` log archive.
+    pub link: Arc<str>,
+    /// The size of the log file in bytes.
+    pub size: usize,
+}
+
 /// Represents the content of a log file to be sent or processed.
 #[derive(Clone)]
 pub enum LogContent {
-    /// A tuple containing:
-    /// - A URL pointing to a `.zip` log archive.
-    /// - The size of the log file in bytes.
-    ExternalLink((String, usize)),
+    /// An external link to a `.zip` log archive with metadata.
+    ExternalLink(ExternalLink),
 
     /// The raw bytes of a `.zip` log archive.
     ZipArchive(Vec<u8>),
@@ -45,7 +57,7 @@ pub struct LogFile {
 
 impl LogFile {
     /// Returns a new `LogFile` with the same name but new content.
-    pub fn modify_content(&self, new_content: LogContent) -> Self {
+    pub fn change_content(&self, new_content: LogContent) -> Self {
         Self {
             name: self.name.clone(),
             content: new_content,
@@ -128,8 +140,8 @@ impl<T: LogSender> LogSenderExt for T {
         let archive = archive.as_ref();
 
         let password = archive.get_password();
-        let archive = archive.create();
+        let archive = archive.create().into();
 
-        self.send(LogFile::new(name, archive.into()), password, collector)
+        self.send(LogFile::new(name, archive), password, collector)
     }
 }
