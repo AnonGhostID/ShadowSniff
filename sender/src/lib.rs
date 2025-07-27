@@ -9,6 +9,7 @@ pub mod size_fallback;
 pub mod size_limit;
 pub mod telegram_bot;
 pub mod tmpfiles;
+pub mod catbox;
 
 use alloc::string::String;
 use alloc::sync::Arc;
