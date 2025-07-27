@@ -16,13 +16,13 @@ use requests::{BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
 /// - Uploaded files will be automatically **deleted 60 minutes** after upload.
 #[derive(Clone)]
 pub struct TmpFiles<T: LogSender> {
-    inner: Uploader<T>
+    inner: Uploader<T>,
 }
 
 impl<T: LogSender> TmpFiles<T> {
     pub fn new(inner: T) -> Self {
         Self {
-            inner: Uploader::new(inner, upload)
+            inner: Uploader::new(inner, upload),
         }
     }
 }

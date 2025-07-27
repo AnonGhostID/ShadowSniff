@@ -15,20 +15,27 @@ use derive_new::new;
 pub struct SizeLimitSender<T: LogSender> {
     inner: T,
     max_size_bytes: usize,
-    check_external_link_size: bool
+    check_external_link_size: bool,
 }
 
 impl<T: LogSender> LogSender for SizeLimitSender<T> {
-    fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
+    fn send<P, C>(
+        &self,
+        log_file: LogFile,
+        password: Option<P>,
+        collector: &C,
+    ) -> Result<(), SendError>
     where
         P: AsRef<str> + Clone,
-        C: Collector
+        C: Collector,
     {
         match &log_file.content {
             LogContent::ZipArchive(data) if data.len() > self.max_size_bytes => {
                 Err(SendError::LogFileTooBig)
             }
-            LogContent::ExternalLink((_, size)) if self.check_external_link_size && *size > self.max_size_bytes  => {
+            LogContent::ExternalLink((_, size))
+                if self.check_external_link_size && *size > self.max_size_bytes =>
+            {
                 Err(SendError::LogFileTooBig)
             }
             _ => self.inner.send(log_file, password, collector),

@@ -27,7 +27,7 @@ where
     T: LogSender,
 {
     inner: T,
-    upload: fn(&str, &[u8]) -> Option<String>
+    upload: fn(&str, &[u8]) -> Option<String>,
 }
 
 impl<T> LogSender for Uploader<T>
