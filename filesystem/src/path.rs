@@ -21,12 +21,9 @@ pub struct Path {
     inner: Arc<str>,
 }
 
-impl Path {
-    pub fn new<S>(path: S) -> Self
-    where
-        S: AsRef<str>,
-    {
-        let path = path.as_ref().to_string().replace('/', "\\");
+impl From<String> for Path {
+    fn from(value: String) -> Self {
+        let path = value.replace('/', "\\");
         let mut normalized = String::with_capacity(path.len());
 
         let mut chars = path.chars().peekable();
@@ -44,6 +41,18 @@ impl Path {
         Self {
             inner: normalized.into(),
         }
+    }
+}
+
+impl Path {
+    pub fn new<S>(path: S) -> Self
+    where
+        S: AsRef<str>,
+    {
+        path
+            .as_ref()
+            .to_string()
+            .into()
     }
 
     pub fn as_absolute(&self) -> Path {

