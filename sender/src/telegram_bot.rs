@@ -262,7 +262,7 @@ impl LogSender for TelegramBotSender {
         P: AsRef<str> + Clone,
         C: Collector,
     {
-        if let LogFile::ZipArchive(archive) = &log_file.content {
+        if let LogContent::ZipArchive(archive) = &log_file.content {
             if archive.len() >= TELEGRAM_MAX_FILE_SIZE {
                 return Err(SendError::LogFileTooBig);
             }
