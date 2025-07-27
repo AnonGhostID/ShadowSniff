@@ -47,7 +47,11 @@ fn capture_screen() -> Result<(i32, i32, Vec<u8>), ()> {
 
     let hdc = unsafe {
         CreateDCW(
-            "DISPLAY".encode_utf16().chain(once(0)).collect::<Vec<u16>>().as_ptr(),
+            "DISPLAY"
+                .encode_utf16()
+                .chain(once(0))
+                .collect::<Vec<u16>>()
+                .as_ptr(),
             null_mut(),
             null_mut(),
             null_mut(),

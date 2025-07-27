@@ -70,7 +70,8 @@ pub fn format_size(bytes: u64) -> String {
 pub fn sanitize_filename(filename: &str) -> String {
     let invalid_chars = ['/', '\\', ':', '*', '?', '"', '<', '>', '|'];
 
-    filename.chars()
+    filename
+        .chars()
         .map(|c| if invalid_chars.contains(&c) { '_' } else { c })
         .collect()
 }

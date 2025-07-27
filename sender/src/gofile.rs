@@ -14,7 +14,7 @@ use requests::{BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
 /// Gofile and then invokes the inner sender with [`LogContent::ExternalLink`].
 #[derive(new, Clone)]
 pub struct Gofile<T: LogSender> {
-    inner: T
+    inner: T,
 }
 
 fn upload(name: &str, bytes: &[u8]) -> Option<String> {
@@ -33,32 +33,35 @@ fn upload(name: &str, bytes: &[u8]) -> Option<String> {
 
     Some(
         parse(response.body())
-            .ok()
-            ?.get(s!("data"))
-            ?.get(s!("downloadPage"))
-            ?.as_string()
-            ?.clone()
+            .ok()?
+            .get(s!("data"))?
+            .get(s!("downloadPage"))?
+            .as_string()?
+            .clone(),
     )
 }
 
 impl<T: LogSender> LogSender for Gofile<T> {
-    fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
+    fn send<P, C>(
+        &self,
+        log_file: LogFile,
+        password: Option<P>,
+        collector: &C,
+    ) -> Result<(), SendError>
     where
         P: AsRef<str> + Clone,
-        C: Collector
+        C: Collector,
     {
-
         match &log_file.content {
             LogContent::ExternalLink(_) => self.inner.send(log_file, password, collector),
             LogContent::ZipArchive(archive) => {
                 let size = archive.len();
-                let link = upload(&log_file.name, archive)
-                    .ok_or(SendError::Network)?;
+                let link = upload(&log_file.name, archive).ok_or(SendError::Network)?;
 
                 self.inner.send(
                     log_file.modify_content(LogContent::ExternalLink((link, size))),
                     password,
-                    collector
+                    collector,
                 )
             }
         }
