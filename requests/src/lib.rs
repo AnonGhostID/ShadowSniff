@@ -40,6 +40,14 @@ macro_rules! write_file_field {
             $file
         );
     };
+    ($builder:expr, $name:expr, $filename:expr => $content_type:expr, $file:expr) => {
+        $builder.write_file_field(
+            obfstr::obfstr!($name),
+            $filename,
+            obfstr::obfstr!($content_type),
+            $file
+        );
+    };
 }
 
 #[macro_export]

