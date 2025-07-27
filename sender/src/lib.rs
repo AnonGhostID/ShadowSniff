@@ -48,7 +48,7 @@ pub struct LogFile {
 
 impl LogFile {
     /// Returns a new `LogFile` with the same name but new content.
-    pub fn modify_content(&self, new_content: LogContent) -> Self {
+    pub fn change_content(&self, new_content: LogContent) -> Self {
         Self {
             name: self.name.clone(),
             content: new_content,

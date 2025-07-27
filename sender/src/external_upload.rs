@@ -51,7 +51,7 @@ where
                 let link = (self.upload)(&log_file.name, archive).ok_or(SendError::Network)?;
 
                 self.inner.send(
-                    log_file.modify_content(LogContent::ExternalLink((link, size))),
+                    log_file.change_content(LogContent::ExternalLink((link, size))),
                     password,
                     collector,
                 )
