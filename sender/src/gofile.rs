@@ -19,7 +19,7 @@ pub struct GofileUploader<T: LogSender> {
 impl<T: LogSender> GofileUploader<T> {
     pub fn new(inner: T) -> Self {
         Self {
-            inner: Uploader::new(inner, upload),
+            inner: Uploader::new(Arc::from(s!("Gofile")), inner, upload),
         }
     }
 }
@@ -31,7 +31,7 @@ fn upload(name: &str, bytes: &[u8]) -> Option<Arc<str>> {
         parse(response.body())
             .ok()?
             .get(s!("data"))?
-            .get(s!("url"))?
+            .get(s!("downloadPage"))?
             .as_string()?
             .clone()
             .into(),

@@ -1,5 +1,5 @@
 use crate::tmpfiles::TmpFilesUploader;
-use crate::{LogContent, LogFile, LogSender, SendError};
+use crate::{ExternalLink, LogContent, LogFile, LogSender, SendError};
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -27,6 +27,7 @@ pub struct Uploader<T>
 where
     T: LogSender,
 {
+    service_name: Arc<str>,
     inner: T,
     upload: fn(&str, &[u8]) -> Option<Arc<str>>,
 }
@@ -49,10 +50,11 @@ where
             LogContent::ExternalLink(_) => self.inner.send(log_file, password, collector),
             LogContent::ZipArchive(archive) => {
                 let size = archive.len();
-                let link = (self.upload)(&log_file.name, archive).ok_or(SendError::Network)?;
+                let external_link = (self.upload)(&log_file.name, archive).ok_or(SendError::Network)?;
+                let link = ExternalLink::new(self.service_name.clone(), external_link, size);
 
                 self.inner.send(
-                    log_file.change_content(LogContent::ExternalLink((link, size))),
+                    log_file.change_content(LogContent::ExternalLink(link)),
                     password,
                     collector,
                 )

@@ -1,4 +1,4 @@
-use crate::{LogContent, LogFile, LogSender, SendError};
+use crate::{ExternalLink, LogContent, LogFile, LogSender, SendError};
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -21,7 +21,7 @@ const TELEGRAM_MAX_FILE_SIZE: usize = 2 * 1024 * 1024 * 1024;
 ///
 /// - `chat_id`: The unique identifier of the target Telegram chat or channel (as a string).
 /// - `token`: The bot token obtained from [BotFather](https://t.me/BotFather).
-/// 
+///
 /// # Notes
 ///
 /// - Telegram has a file upload limit of 2 GB per file.
@@ -43,9 +43,8 @@ where
     let caption = DisplayCollector(collector).to_string();
 
     let link = match log_content {
-        LogContent::ExternalLink((link, size)) => Some(format!(
-            r#"<a href="{}">Download [{}]</a>"#,
-            link,
+        LogContent::ExternalLink(ExternalLink { service_name, link, size }) => Some(format!(
+            r#"<a href="{link}">Download from {service_name} [{}]</a>"#,
             format_size(*size as _)
         )),
         _ => None,

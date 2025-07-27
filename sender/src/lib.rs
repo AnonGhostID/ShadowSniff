@@ -24,13 +24,22 @@ pub enum SendError {
     LogFileTooBig,
 }
 
+/// Represents a link to an external log file with associated metadata.
+#[derive(new, Clone)]
+pub struct ExternalLink {
+    /// The service name where the log file is located.
+    pub service_name: Arc<str>,
+    /// The URL pointing to the `.zip` log archive.
+    pub link: Arc<str>,
+    /// The size of the log file in bytes.
+    pub size: usize,
+}
+
 /// Represents the content of a log file to be sent or processed.
 #[derive(Clone)]
 pub enum LogContent {
-    /// A tuple containing:
-    /// - A URL pointing to a `.zip` log archive.
-    /// - The size of the log file in bytes.
-    ExternalLink((Arc<str>, usize)),
+    /// An external link to a `.zip` log archive with metadata.
+    ExternalLink(ExternalLink),
 
     /// The raw bytes of a `.zip` log archive.
     ZipArchive(Vec<u8>),

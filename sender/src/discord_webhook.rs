@@ -1,4 +1,4 @@
-use crate::{LogContent, LogFile, LogSender, SendError};
+use crate::{ExternalLink, LogContent, LogFile, LogSender, SendError};
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::{format, vec};
@@ -36,8 +36,8 @@ where
     C: Collector,
 {
     let link = match log {
-        LogContent::ExternalLink((link, size)) => Some(format!(
-            r#"[Download [{size}]]({link})"#,
+        LogContent::ExternalLink(ExternalLink {service_name, link, size}) => Some(format!(
+            r#"[Download from {service_name} [{size}]]({link})"#,
             size = format_size(*size as _)
         )),
         _ => None,
