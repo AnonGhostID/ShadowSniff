@@ -1,4 +1,4 @@
-use crate::{LogFile, LogSender, SendError};
+use crate::{LogContent, LogSender, SendError};
 use collector::Collector;
 use derive_new::new;
 
@@ -28,7 +28,7 @@ where
     Primary: LogSender,
     Fallback: LogSender,
 {
-    fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
+    fn send<P, C>(&self, log_file: LogContent, password: Option<P>, collector: &C) -> Result<(), SendError>
     where
         P: AsRef<str> + Clone,
         C: Collector

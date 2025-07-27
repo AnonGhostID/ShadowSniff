@@ -19,9 +19,9 @@ pub enum SendError {
     LogFileTooBig
 }
 
-/// Represents a log file to be sent or processed.
+/// Represents the content of a log file to be sent or processed.
 #[derive(Clone)]
-pub enum LogFile {
+pub enum LogContent {
     /// A tuple containing:
     /// - A URL pointing to a `.zip` log archive.
     /// - The size of the log file in bytes.
@@ -31,9 +31,15 @@ pub enum LogFile {
     ZipArchive(Vec<u8>)
 }
 
-impl From<Vec<u8>> for LogFile {
+impl From<Vec<u8>> for LogContent {
     fn from(value: Vec<u8>) -> Self {
-        LogFile::ZipArchive(value)
+        LogContent::ZipArchive(value)
+    }
+}
+
+impl From<ZipArchive> for LogContent {
+    fn from(value: ZipArchive) -> Self {
+        LogContent::ZipArchive(value.create())
     }
 }
 
@@ -43,14 +49,14 @@ pub trait LogSender: Clone {
     ///
     /// # Parameters
     ///
-    /// - `log_file`: A [`LogFile`] enum representing the log file to send.
+    /// - `log_file`: A [`LogContent`] enum representing the log file to send.
     /// - `password`: An [`Option<String>`] that specifies the password for the archive, if it is password-protected.
     /// - `collector`: A type that implements the [`Collector`] trait, providing log-related metadata or additional context.
     ///
     /// # Returns
     ///
     /// - `Result<(), SendError>`: Returns `Ok(())` if the log was sent successfully, or a [`SendError`] if the operation failed.
-    fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
+    fn send<P, C>(&self, log_file: LogContent, password: Option<P>, collector: &C) -> Result<(), SendError>
     where
         P: AsRef<str> + Clone,
         C: Collector;
@@ -74,7 +80,7 @@ pub trait LogSenderExt: LogSender {
     /// # Notes
     ///
     /// This method automatically extracts the password from the archive if one is set,
-    /// and converts the archive into a [`LogFile::ZipArchive`].
+    /// and converts the archive into a [`LogContent::ZipArchive`].
     fn send_archive<A, C>(&self, archive: A, collector: &C) -> Result<(), SendError>
     where
         A: AsRef<ZipArchive>,
