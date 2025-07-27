@@ -9,6 +9,7 @@ pub mod size_fallback;
 pub mod size_limit;
 pub mod telegram_bot;
 pub mod tmpfiles;
+pub mod catbox;
 
 use alloc::string::String;
 use alloc::sync::Arc;
@@ -28,11 +29,11 @@ pub enum SendError {
 #[derive(new, Clone)]
 pub struct ExternalLink {
     /// The service name where the log file is located.
-    pub service_name: Arc<str>,
+    service_name: Arc<str>,
     /// The URL pointing to the `.zip` log archive.
-    pub link: Arc<str>,
+    link: Arc<str>,
     /// The size of the log file in bytes.
-    pub size: usize,
+    size: usize,
 }
 
 /// Represents the content of a log file to be sent or processed.
