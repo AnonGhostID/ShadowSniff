@@ -21,9 +21,10 @@ const TELEGRAM_MAX_FILE_SIZE: usize = 2 * 1024 * 1024 * 1024;
 ///
 /// - `chat_id`: The unique identifier of the target Telegram chat or channel (as a string).
 /// - `token`: The bot token obtained from [BotFather](https://t.me/BotFather).
+/// 
 /// # Notes
 ///
-/// - Discord has a file upload limit of 2 GB per file.
+/// - Telegram has a file upload limit of 2 GB per file.
 #[derive(new, Clone)]
 pub struct TelegramBotSender {
     chat_id: Arc<str>,

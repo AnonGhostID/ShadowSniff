@@ -131,8 +131,8 @@ impl<T: LogSender> LogSenderExt for T {
         let archive = archive.as_ref();
 
         let password = archive.get_password();
-        let archive = archive.create();
+        let archive = archive.create().into();
 
-        self.send(LogFile::new(name, archive.into()), password, collector)
+        self.send(LogFile::new(name, archive), password, collector)
     }
 }

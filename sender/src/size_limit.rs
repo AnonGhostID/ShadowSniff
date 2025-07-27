@@ -8,6 +8,7 @@ use derive_new::new;
 /// If the log exceeds the configured `max_size_bytes`, it returns a [`SendError::LogFileTooBig`] instead of sending.
 ///
 /// # Fields
+/// 
 /// - `inner`: The inner sender used when size checks pass.
 /// - `max_size_bytes`: Maximum allowed size in bytes.
 /// - `check_external_link_size`: If `true`, also checks size for [`LogFile::ExternalLink`] variants.

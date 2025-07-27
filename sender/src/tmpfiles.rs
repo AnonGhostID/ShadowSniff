@@ -12,6 +12,7 @@ use requests::{BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
 /// https://tmpfiles.org uploader wrapper around an inner [`LogSender`].
 ///
 /// # Take into account
+///
 /// - The maximum supported log file size is **100 MB**.
 /// - Uploaded files will be automatically **deleted 60 minutes** after upload.
 #[derive(Clone)]
