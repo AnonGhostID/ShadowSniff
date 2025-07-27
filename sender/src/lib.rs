@@ -6,6 +6,7 @@ pub mod gofile;
 pub mod size_fallback;
 pub mod discord_webhook;
 pub mod fallback;
+pub mod size_limit;
 
 use alloc::string::String;
 use alloc::vec::Vec;
