@@ -36,7 +36,10 @@ pub enum LogContent {
 /// Represents a named log file with content.
 #[derive(new, Clone)]
 pub struct LogFile {
+    /// The name of the log file, including its extension.
     name: Arc<str>,
+
+    /// The content of the log file.
     content: LogContent,
 }
 
