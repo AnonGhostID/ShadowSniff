@@ -13,13 +13,13 @@ use derive_new::new;
 /// - `max_size_bytes`: Maximum allowed size in bytes.
 /// - `check_external_link_size`: If `true`, also checks size for [`LogFile::ExternalLink`] variants.
 #[derive(new, Clone)]
-pub struct SizeLimitSender<T: LogSender> {
+pub struct SizeLimitWrapper<T: LogSender> {
     inner: T,
     max_size_bytes: usize,
     check_external_link_size: bool,
 }
 
-impl<T: LogSender> LogSender for SizeLimitSender<T> {
+impl<T: LogSender> LogSender for SizeLimitWrapper<T> {
     fn send<P, C>(
         &self,
         log_file: LogFile,

