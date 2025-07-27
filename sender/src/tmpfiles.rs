@@ -3,6 +3,7 @@ use crate::gofile::GofileUploader;
 use crate::size_limit::SizeLimitWrapper;
 use crate::{LogContent, LogFile, LogSender, SendError};
 use alloc::string::String;
+use alloc::sync::Arc;
 use collector::Collector;
 use delegate::delegate;
 use derive_new::new;
@@ -36,7 +37,7 @@ impl<T: LogSender> TmpFilesUploader<T> {
     }
 }
 
-fn upload(name: &str, bytes: &[u8]) -> Option<String> {
+fn upload(name: &str, bytes: &[u8]) -> Option<Arc<str>> {
     let response = base_upload(name, s!("https://tmpfiles.org/api/v1/upload"), bytes)?;
 
     Some(
@@ -45,7 +46,8 @@ fn upload(name: &str, bytes: &[u8]) -> Option<String> {
             .get(s!("data"))?
             .get(s!("url"))?
             .as_string()?
-            .clone(),
+            .clone()
+            .into(),
     )
 }
 

@@ -1,6 +1,7 @@
 use crate::external_upload::{base_upload, Uploader};
 use crate::{LogContent, LogFile, LogSender, SendError};
 use alloc::string::String;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use collector::Collector;
 use delegate::delegate;
@@ -23,7 +24,7 @@ impl<T: LogSender> GofileUploader<T> {
     }
 }
 
-fn upload(name: &str, bytes: &[u8]) -> Option<String> {
+fn upload(name: &str, bytes: &[u8]) -> Option<Arc<str>> {
     let response = base_upload(name, s!("https://upload.gofile.io/uploadFile"), bytes)?;
 
     Some(
@@ -32,7 +33,8 @@ fn upload(name: &str, bytes: &[u8]) -> Option<String> {
             .get(s!("data"))?
             .get(s!("url"))?
             .as_string()?
-            .clone(),
+            .clone()
+            .into(),
     )
 }
 

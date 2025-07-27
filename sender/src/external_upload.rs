@@ -1,6 +1,7 @@
 use crate::tmpfiles::TmpFilesUploader;
 use crate::{LogContent, LogFile, LogSender, SendError};
 use alloc::string::String;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use collector::Collector;
 use derive_new::new;
@@ -27,7 +28,7 @@ where
     T: LogSender,
 {
     inner: T,
-    upload: fn(&str, &[u8]) -> Option<String>,
+    upload: fn(&str, &[u8]) -> Option<Arc<str>>,
 }
 
 impl<T> LogSender for Uploader<T>

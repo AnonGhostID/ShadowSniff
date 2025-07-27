@@ -30,7 +30,7 @@ pub enum LogContent {
     /// A tuple containing:
     /// - A URL pointing to a `.zip` log archive.
     /// - The size of the log file in bytes.
-    ExternalLink((String, usize)),
+    ExternalLink((Arc<str>, usize)),
 
     /// The raw bytes of a `.zip` log archive.
     ZipArchive(Vec<u8>),
