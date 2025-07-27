@@ -1,9 +1,9 @@
 #![no_std]
 
 extern crate alloc;
+pub mod path;
 pub mod storage;
 pub mod virtualfs;
-pub mod path;
 
 use crate::path::Path;
 use alloc::vec::Vec;
@@ -189,9 +189,7 @@ where
 /// applying a filter function to select which files/directories to copy.
 ///
 /// The copied folder will be created inside `dst_path` using the folder's own name.
-pub fn copy_folder_with_filter<
-    SrcRef, SrcFs, DstRef, DstFs, SrcPath, DstPath, F
->(
+pub fn copy_folder_with_filter<SrcRef, SrcFs, DstRef, DstFs, SrcPath, DstPath, F>(
     src_fs: SrcRef,
     src_path: SrcPath,
     dst_fs: DstRef,
@@ -222,9 +220,7 @@ where
 
 /// Copies a folder recursively from `src_fs` at `src_path` to `dst_fs` at `dst_path`
 /// without any filter (copies everything).
-pub fn copy_folder<
-    SrcRef, SrcFs, SrcPath, DstRef, DstFs, DstPath
->(
+pub fn copy_folder<SrcRef, SrcFs, SrcPath, DstRef, DstFs, DstPath>(
     src_fs: SrcRef,
     src_path: SrcPath,
     dst_fs: DstRef,
@@ -243,9 +239,7 @@ where
 
 /// Copies all contents of a directory recursively from `src_fs` at `src_path`
 /// to `dst_fs` at `dst_path` without filtering.
-pub fn copy_content<
-    SrcRef, SrcFs, SrcPath, DstRef, DstFs, DstPath
->(
+pub fn copy_content<SrcRef, SrcFs, SrcPath, DstRef, DstFs, DstPath>(
     src_fs: SrcRef,
     src_path: SrcPath,
     dst_fs: DstRef,
@@ -264,9 +258,7 @@ where
 
 /// Copies the contents of a directory recursively from `src_fs` at `src_path`
 /// to `dst_fs` at `dst_path`, applying a filter function.
-pub fn copy_content_with_filter<
-    SrcRef, SrcFs, SrcPath, DstRef, DstFs, DstPath, F
->(
+pub fn copy_content_with_filter<SrcRef, SrcFs, SrcPath, DstRef, DstFs, DstPath, F>(
     src_fs: SrcRef,
     src_path: SrcPath,
     dst_fs: DstRef,

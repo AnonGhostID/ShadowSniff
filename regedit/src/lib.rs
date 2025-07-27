@@ -8,7 +8,10 @@ use core::iter::once;
 use core::ptr::null_mut;
 use core::slice;
 use windows_sys::Win32::Foundation::ERROR_SUCCESS;
-use windows_sys::Win32::System::Registry::{RegCloseKey, RegOpenKeyExW, RegQueryValueExW, HKEY, KEY_READ, KEY_WOW64_64KEY, REG_BINARY, REG_DWORD, REG_EXPAND_SZ, REG_QWORD, REG_SZ};
+use windows_sys::Win32::System::Registry::{
+    RegCloseKey, RegOpenKeyExW, RegQueryValueExW, HKEY, KEY_READ, KEY_WOW64_64KEY, REG_BINARY, REG_DWORD,
+    REG_EXPAND_SZ, REG_QWORD, REG_SZ,
+};
 
 #[cfg_attr(test, derive(Debug))]
 pub enum RegistryValue {
@@ -17,7 +20,7 @@ pub enum RegistryValue {
     Binary(Vec<u8>),
     Dword(u32),
     Qword(u64),
-    None
+    None,
 }
 
 impl RegistryValue {
@@ -41,15 +44,13 @@ impl RegistryValue {
                     None
                 }
             }
-            _ => None
+            _ => None,
         }
     }
 }
 
 fn string_from_utf16_null_terminated(bytes: &[u8]) -> String {
-    let utf16 = unsafe {
-        slice::from_raw_parts(bytes.as_ptr() as _, bytes.len() / 2)
-    };
+    let utf16 = unsafe { slice::from_raw_parts(bytes.as_ptr() as _, bytes.len() / 2) };
 
     let len = utf16.iter().position(|&c| c == 0).unwrap_or(utf16.len());
     String::from_utf16_lossy(&utf16[..len])
@@ -118,7 +119,6 @@ where
         Ok(RegistryValue::from_raw(data, reg_type))
     }
 }
-
 
 fn to_wide(str: &str) -> Vec<u16> {
     str.encode_utf16().chain(once(0)).collect()

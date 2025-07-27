@@ -37,7 +37,15 @@ macro_rules! write_file_field {
             obfstr::obfstr!($name),
             obfstr::obfstr!($filename),
             obfstr::obfstr!($content_type),
-            $file
+            $file,
+        );
+    };
+    ($builder:expr, $name:expr, $filename:expr => $content_type:expr, $file:expr) => {
+        $builder.write_file_field(
+            obfstr::obfstr!($name),
+            $filename,
+            obfstr::obfstr!($content_type),
+            $file,
         );
     };
 }
@@ -45,16 +53,10 @@ macro_rules! write_file_field {
 #[macro_export]
 macro_rules! write_text_field {
     ($builder:expr, $name:expr, $value:expr) => {
-        $builder.write_text_field(
-            obfstr::obfstr!($name),
-            obfstr::obfstr!($value),
-        );
+        $builder.write_text_field(obfstr::obfstr!($name), obfstr::obfstr!($value));
     };
     ($builder:expr, $name:expr => $value:expr) => {
-        $builder.write_text_field(
-            obfstr::obfstr!($name),
-            $value,
-        );
+        $builder.write_text_field(obfstr::obfstr!($name), $value);
     };
 }
 
@@ -76,7 +78,8 @@ impl MultipartBuilder {
         self.body.extend_from_slice(self.boundary.as_bytes());
         self.body.extend_from_slice(b"\r\n");
 
-        self.body.extend_from_slice(b"Content-Disposition: form-data; name=\"");
+        self.body
+            .extend_from_slice(b"Content-Disposition: form-data; name=\"");
         self.body.extend_from_slice(name.as_bytes());
         self.body.extend_from_slice(b"\"\r\n\r\n");
 
@@ -95,7 +98,8 @@ impl MultipartBuilder {
         self.body.extend_from_slice(self.boundary.as_bytes());
         self.body.extend_from_slice(b"\r\n");
 
-        self.body.extend_from_slice(b"Content-Disposition: form-data; name=\"");
+        self.body
+            .extend_from_slice(b"Content-Disposition: form-data; name=\"");
         self.body.extend_from_slice(name.as_bytes());
         self.body.extend_from_slice(b"\"; filename=\"");
         self.body.extend_from_slice(filename.as_bytes());

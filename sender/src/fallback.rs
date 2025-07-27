@@ -27,12 +27,20 @@ where
     Primary: LogSender,
     Fallback: LogSender,
 {
-    fn send<P, C>(&self, log_file: LogFile, password: Option<P>, collector: &C) -> Result<(), SendError>
+    fn send<P, C>(
+        &self,
+        log_file: LogFile,
+        password: Option<P>,
+        collector: &C,
+    ) -> Result<(), SendError>
     where
         P: AsRef<str> + Clone,
-        C: Collector
+        C: Collector,
     {
-        match self.primary.send(log_file.clone(), password.clone(), collector) {
+        match self
+            .primary
+            .send(log_file.clone(), password.clone(), collector)
+        {
             ok @ Ok(_) => ok,
             Err(_) => self.fallback.send(log_file, password, collector),
         }

@@ -116,5 +116,4 @@ where
             let _ = copy_folder(StorageFileSystem, path, dst_filesystem, dst);
         }
     }
-
 }

@@ -12,3 +12,4 @@ requests = { path = "../requests" }
 json = { path = "../json" }
 zip = { path = "../zip" }
 obfstr = "0.4.4"
+log = "0.4.27"
