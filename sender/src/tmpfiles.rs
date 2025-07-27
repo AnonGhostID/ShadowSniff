@@ -8,10 +8,7 @@ use json::parse;
 use obfstr::obfstr as s;
 use requests::{BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
 
-/// TmpFiles uploader wrapper around an inner [`LogSender`].
-///
-/// If the log is a zipped archive ([`LogContent::ZipArchive`]), this struct uploads it to
-/// https://tmpfiles.org and then invokes the inner sender with [`LogContent::ExternalLink`].
+/// https://tmpfiles.org uploader wrapper around an inner [`LogSender`].
 ///
 /// # Take into account
 /// - The maximum supported log file size is **100 MB**.

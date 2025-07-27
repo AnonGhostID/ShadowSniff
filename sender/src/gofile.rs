@@ -8,10 +8,7 @@ use json::parse;
 use obfstr::obfstr as s;
 use requests::{BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
 
-/// Gofile uploader wrapper around an inner [`LogSender`].
-///
-/// If the log is a zipped archive ([`LogContent::ZipArchive`]), this struct uploads it to
-/// https://gofile.io and then invokes the inner sender with [`LogContent::ExternalLink`].
+/// https://gofile.io uploader wrapper around an inner [`LogSender`].
 #[derive(Clone)]
 pub struct GofileSender<T: LogSender> {
     inner: Uploader<T>,
