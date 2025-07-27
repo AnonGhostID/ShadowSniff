@@ -16,7 +16,7 @@ pub struct GofileSender<T: LogSender> {
 }
 
 impl<T: LogSender> GofileSender<T> {
-    fn new(inner: T) -> Self {
+    pub fn new(inner: T) -> Self {
         Self {
             inner: Uploader::new(inner, upload),
         }
