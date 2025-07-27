@@ -29,11 +29,11 @@ pub enum SendError {
 #[derive(new, Clone)]
 pub struct ExternalLink {
     /// The service name where the log file is located.
-    pub service_name: Arc<str>,
+    service_name: Arc<str>,
     /// The URL pointing to the `.zip` log archive.
-    pub link: Arc<str>,
+    link: Arc<str>,
     /// The size of the log file in bytes.
-    pub size: usize,
+    size: usize,
 }
 
 /// Represents the content of a log file to be sent or processed.
