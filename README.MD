@@ -343,7 +343,7 @@ And if you want, add it to the main, "entrypoint" task - `SniffTask` if you are 
 ```rust
 pub struct SniffTask<C: Collector, F: FileSystem> {
     inner: CompositeTask<C, F>,
-    subtasks: Option<CompositeTask<C, F>>,
+    subtask: Option<Box<dyn Task<C, F>>>,
 }
 
 impl<C: Collector + 'static, F: FileSystem + 'static> Default for SniffTask<C, F> {
@@ -354,7 +354,7 @@ impl<C: Collector + 'static, F: FileSystem + 'static> Default for SniffTask<C, F
                 VpnTask::default(),
                 /* ... */,
             ),
-            subtasks: None
+            subtask: None
         }
     }
 };
@@ -365,7 +365,7 @@ impl<C: Collector + 'static, F: FileSystem + 'static> Default for SniffTask<C, F
 Or use `SniffTask` api and create the `SniffTask` instance with your task using:
 ```rust
 fn main() {
-    SniffTask::with_subtasks(composite_task!(
+    SniffTask::with_subtask(composite_task!(
         VpnTask::default() // and other tasks, divided by comma
     )).run(/* out */, /* filesystem */, /* collector */);
 }

