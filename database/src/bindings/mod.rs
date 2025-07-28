@@ -5,14 +5,15 @@ use crate::bindings::sqlite3_bindings::{
     sqlite3_stmt, SQLITE_BLOB, SQLITE_DESERIALIZE_RESIZEABLE, SQLITE_FLOAT, SQLITE_INTEGER,
     SQLITE_NULL, SQLITE_ROW, SQLITE_TEXT,
 };
-use crate::{DatabaseReader, TableRecord, Value};
+use crate::{Database, DatabaseReader, TableRecord, Value};
 use alloc::boxed::Box;
 use alloc::format;
-use alloc::string::String;
+use alloc::sync::Arc;
 use alloc::vec::{IntoIter, Vec};
 use core::ffi::c_char;
+use core::mem::forget;
 use core::ptr::null_mut;
-use filesystem::path::Path;
+use core::str::from_utf8_unchecked;
 use obfstr::obfstr as s;
 
 mod sqlite3_bindings;
@@ -21,35 +22,33 @@ pub(crate) struct Sqlite3BindingsReader {
     db: *mut sqlite3,
 }
 
-impl Sqlite3BindingsReader {
-    pub fn new_from_file(db_path: &Path) -> Result<Self, i32> {
-        let c_path = CString::new(db_path);
-
+impl Drop for Sqlite3BindingsReader {
+    fn drop(&mut self) {
         unsafe {
-            sqlite3_initialize();
+            sqlite3_close(self.db);
         }
-
-        let mut db: *mut sqlite3 = null_mut();
-        let rc = unsafe { sqlite3_open(c_path.as_ptr(), &mut db) };
-
-        if rc != 0 { Err(rc) } else { Ok(Self { db }) }
     }
+}
 
-    pub fn new_from_bytes(db_bytes: &[u8]) -> Result<Self, i32> {
+impl Database for Sqlite3BindingsReader {
+    fn from_bytes(bytes: Vec<u8>) -> Result<Self, i32>
+    where
+        Self: Sized
+    {
         let mut db: *mut sqlite3 = null_mut();
 
         unsafe {
             sqlite3_initialize();
         }
 
-        let rc = unsafe { sqlite3_open(":memory:\0".as_ptr() as *const i8, &mut db) };
+        let rc = unsafe { sqlite3_open(c":memory:".as_ptr(), &mut db) };
 
         if rc != 0 {
             return Err(rc);
         }
 
-        let data_size = db_bytes.len();
-        let data = db_bytes.to_vec().into_boxed_slice();
+        let data_size = bytes.len();
+        let data = bytes.to_vec().into_boxed_slice();
         let data_ptr = Box::into_raw(data) as *mut u8;
 
         let rc = unsafe {
@@ -71,31 +70,9 @@ impl Sqlite3BindingsReader {
     }
 }
 
-impl Drop for Sqlite3BindingsReader {
-    fn drop(&mut self) {
-        unsafe {
-            sqlite3_close(self.db);
-        }
-    }
-}
-
 impl DatabaseReader for Sqlite3BindingsReader {
     type Iter = SqliteIterator;
     type Record = SqliteRow;
-
-    fn from_bytes(bytes: &[u8]) -> Result<Self, i32>
-    where
-        Self: Sized,
-    {
-        Sqlite3BindingsReader::new_from_bytes(bytes)
-    }
-
-    fn from_path(path: &Path) -> Result<Self, i32>
-    where
-        Self: Sized,
-    {
-        Sqlite3BindingsReader::new_from_file(path)
-    }
 
     fn read_table<S>(&self, table_name: S) -> Option<Self::Iter>
     where
@@ -141,8 +118,8 @@ pub struct SqliteRow {
 }
 
 impl TableRecord for SqliteRow {
-    fn get_value(&self, key: usize) -> Option<&Value> {
-        self.row.get(key)
+    fn get_value(&self, key: usize) -> Option<Value> {
+        self.row.get(key).cloned()
     }
 }
 
@@ -169,8 +146,15 @@ impl SqliteTable {
                             if text_ptr.is_null() {
                                 Value::Null
                             } else {
-                                let bytes = core::slice::from_raw_parts(text_ptr, len);
-                                Value::String(String::from_utf8_lossy(bytes).into_owned())
+                                let vec = { Vec::from_raw_parts(text_ptr as *mut u8, len, len) };
+                                let arc_str = {
+                                    let s = from_utf8_unchecked(&vec);
+                                    let arc = Arc::<str>::from(s);
+                                    forget(vec);
+                                    arc
+                                };
+
+                                Value::String(arc_str)
                             }
                         }
                         SQLITE_BLOB => {
@@ -179,8 +163,8 @@ impl SqliteTable {
                             if ptr.is_null() {
                                 Value::Null
                             } else {
-                                let slice = core::slice::from_raw_parts(ptr as *const u8, len);
-                                Value::Blob(slice.to_vec())
+                                let vec = Vec::from_raw_parts(ptr as *mut u8, len, len);
+                                Value::Blob(Arc::from(vec))
                             }
                         }
                         SQLITE_NULL => Value::Null,
