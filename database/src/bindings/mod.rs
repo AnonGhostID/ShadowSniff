@@ -8,6 +8,7 @@ use crate::bindings::sqlite3_bindings::{
 use crate::{Database, DatabaseReader, TableRecord, Value};
 use alloc::boxed::Box;
 use alloc::format;
+use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::{IntoIter, Vec};
 use core::ffi::c_char;
@@ -54,7 +55,7 @@ impl Database for Sqlite3BindingsDatabase {
         let rc = unsafe {
             sqlite3_deserialize(
                 db,
-                b"main\0".as_ptr() as *const i8,
+                c"main".as_ptr(),
                 data_ptr,
                 data_size as i64,
                 data_size as i64,
@@ -146,15 +147,8 @@ impl SqliteTable {
                             if text_ptr.is_null() {
                                 Value::Null
                             } else {
-                                let vec = { Vec::from_raw_parts(text_ptr as *mut u8, len, len) };
-                                let arc_str = {
-                                    let s = from_utf8_unchecked(&vec);
-                                    let arc = Arc::<str>::from(s);
-                                    forget(vec);
-                                    arc
-                                };
-
-                                Value::String(arc_str)
+                                let bytes = core::slice::from_raw_parts(text_ptr, len);
+                                Value::String(String::from_utf8_lossy(bytes).into())
                             }
                         }
                         SQLITE_BLOB => {
@@ -163,8 +157,8 @@ impl SqliteTable {
                             if ptr.is_null() {
                                 Value::Null
                             } else {
-                                let vec = Vec::from_raw_parts(ptr as *mut u8, len, len);
-                                Value::Blob(Arc::from(vec))
+                                let slice = core::slice::from_raw_parts(ptr as *const u8, len);
+                                Value::Blob(Arc::from(slice.to_vec()))
                             }
                         }
                         SQLITE_NULL => Value::Null,
