@@ -54,9 +54,7 @@ fn extract_card_from_record<R: TableRecord>(
     record: &R,
     browser_data: &BrowserData,
 ) -> Option<CreditCard> {
-    let name_on_card = record
-        .get_value(CREDIT_CARDS_NAME_ON_CARD)?
-        .as_string()?;
+    let name_on_card = record.get_value(CREDIT_CARDS_NAME_ON_CARD)?.as_string()?;
     let expiration_month = record
         .get_value(CREDIT_CARDS_EXPIRATION_MONTH)?
         .as_integer()?;
@@ -66,7 +64,7 @@ fn extract_card_from_record<R: TableRecord>(
     let use_count = record.get_value(CREDIT_CARDS_USE_COUNT)?.as_integer()?;
 
     let encrypted_card_number = record.get_value(CREDIT_CARDS_CARD_NUMBER)?.as_blob()?;
-    let card_number = unsafe { decrypt_data(&encrypted_card_number, browser_data) }?.into();
+    let card_number = decrypt_data(&encrypted_card_number, browser_data)?.into();
 
     Some(CreditCard {
         name_on_card,
