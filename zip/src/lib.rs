@@ -43,40 +43,6 @@ impl Deref for ZipEntry {
     }
 }
 
-pub enum IntoPath<'a, 'b> {
-    Reference(&'a Path),
-    Borrowed(Path),
-    StringReference(&'b str),
-}
-
-impl From<IntoPath<'_, '_>> for Path {
-    fn from(value: IntoPath) -> Self {
-        match value {
-            IntoPath::Reference(val) => val.clone(),
-            IntoPath::Borrowed(val) => val,
-            IntoPath::StringReference(val) => Path::new(val),
-        }
-    }
-}
-
-impl<'a> From<Path> for IntoPath<'a, '_> {
-    fn from(value: Path) -> Self {
-        IntoPath::Borrowed(value)
-    }
-}
-
-impl<'a> From<&'a Path> for IntoPath<'a, '_> {
-    fn from(value: &'a Path) -> Self {
-        IntoPath::Reference(value)
-    }
-}
-
-impl<'b> From<&'b str> for IntoPath<'_, 'b> {
-    fn from(value: &'b str) -> Self {
-        IntoPath::StringReference(value)
-    }
-}
-
 #[derive(Copy, Clone)]
 pub enum ZipCompression {
     NONE,
@@ -129,32 +95,32 @@ impl ZipArchive {
         self
     }
 
-    pub fn add_folder_content<'a, 'b, F, P>(mut self, filesystem: &F, root: P) -> Self
+    pub fn add_folder_content<F, P>(mut self, filesystem: &F, root: P) -> Self
     where
-        P: Into<IntoPath<'a, 'b>>,
+        P: AsRef<Path>,
         F: FileSystem,
     {
-        let root = &Path::from(root.into());
+        let root = root.as_ref();
         let _ = self.add_folder_content_internal(filesystem, root, root, true);
         self
     }
 
-    pub fn add_folder<'a, 'b, F, P>(&mut self, filesystem: &F, folder: P) -> &mut Self
+    pub fn add_folder<F, P>(&mut self, filesystem: &F, folder: P) -> &mut Self
     where
-        P: Into<IntoPath<'a, 'b>>,
+        P: AsRef<Path>,
         F: FileSystem,
     {
-        let folder = &Path::from(folder.into());
+        let folder = folder.as_ref();
         let _ = self.add_folder_content_internal(filesystem, folder, folder, false);
         self
     }
 
-    pub fn add_file<'a, 'b, F, P>(&mut self, filesystem: &F, file: P) -> &mut Self
+    pub fn add_file<F, P>(&mut self, filesystem: &F, file: P) -> &mut Self
     where
-        P: Into<IntoPath<'a, 'b>>,
+        P: AsRef<Path>,
         F: FileSystem,
     {
-        let file = &Path::from(file.into());
+        let file = file.as_ref();
         let _ = self.add_file_internal(filesystem, file);
         self
     }
