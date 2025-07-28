@@ -1,7 +1,7 @@
 #![no_std]
 
 extern crate alloc;
-mod bindings;
+pub mod bindings;
 
 use alloc::string::String;
 use alloc::sync::Arc;

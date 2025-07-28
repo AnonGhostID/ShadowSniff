@@ -18,11 +18,11 @@ use obfstr::obfstr as s;
 
 mod sqlite3_bindings;
 
-pub(crate) struct Sqlite3BindingsReader {
+pub struct Sqlite3BindingsDatabase {
     db: *mut sqlite3,
 }
 
-impl Drop for Sqlite3BindingsReader {
+impl Drop for Sqlite3BindingsDatabase {
     fn drop(&mut self) {
         unsafe {
             sqlite3_close(self.db);
@@ -30,7 +30,7 @@ impl Drop for Sqlite3BindingsReader {
     }
 }
 
-impl Database for Sqlite3BindingsReader {
+impl Database for Sqlite3BindingsDatabase {
     fn from_bytes(bytes: Vec<u8>) -> Result<Self, i32>
     where
         Self: Sized
@@ -70,7 +70,7 @@ impl Database for Sqlite3BindingsReader {
     }
 }
 
-impl DatabaseReader for Sqlite3BindingsReader {
+impl DatabaseReader for Sqlite3BindingsDatabase {
     type Iter = SqliteIterator;
     type Record = SqliteRow;
 
