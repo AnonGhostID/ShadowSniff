@@ -6,6 +6,11 @@ use rand_chacha::rand_core::RngCore;
 use rand_chacha::ChaCha20Rng;
 use utils::random::ChaCha20RngExt;
 
+/// # Specification References
+/// * [APPNOTE.TXT - PKWARE ZIP File Format](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT)
+/// * [Central Directory File Header (Section 4.3.12)](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT)
+/// * [Local File Header (Section 4.3.7)](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT)
+/// * [End of Central Directory Record (Section 4.3.16)](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT)
 pub(super) fn create_zip(archive: &ZipArchive) -> Vec<u8> {
     let mut zip_data = Vec::new();
     let mut central_directory = Vec::new();
