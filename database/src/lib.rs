@@ -1,26 +1,28 @@
 #![no_std]
 
 extern crate alloc;
-mod bindings;
+pub mod bindings;
 
-use crate::bindings::Sqlite3BindingsReader;
 use alloc::string::String;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::fmt::{Display, Formatter};
 use filesystem::path::Path;
+use filesystem::FileSystem;
 
+#[derive(Clone)]
 pub enum Value {
-    String(String),
+    String(Arc<str>),
     Integer(i64),
     Float(f64),
-    Blob(Vec<u8>),
+    Blob(Arc<[u8]>),
     Null,
 }
 
 impl Value {
-    pub fn as_string(&self) -> Option<&String> {
+    pub fn as_string(&self) -> Option<Arc<str>> {
         if let Value::String(s) = self {
-            Some(s)
+            Some(s.clone())
         } else {
             None
         }
@@ -42,9 +44,9 @@ impl Value {
         }
     }
 
-    pub fn as_blob(&self) -> Option<&Vec<u8>> {
+    pub fn as_blob(&self) -> Option<Arc<[u8]>> {
         if let Value::Blob(b) = self {
-            Some(b)
+            Some(b.clone())
         } else {
             None
         }
@@ -71,47 +73,43 @@ impl Display for Value {
     }
 }
 
+pub trait Database: DatabaseReader {
+    fn from_bytes(bytes: Vec<u8>) -> Result<Self, i32>
+    where
+        Self: Sized;
+}
+
 pub trait DatabaseReader {
     type Iter: Iterator<Item = Self::Record>;
     type Record: TableRecord;
-
-    fn from_bytes(bytes: &[u8]) -> Result<Self, i32>
-    where
-        Self: Sized;
-
-    fn from_path(path: &Path) -> Result<Self, i32>
-    where
-        Self: Sized;
 
     fn read_table<S>(&self, table_name: S) -> Option<Self::Iter>
     where
         S: AsRef<str>;
 }
 
+pub trait DatabaseExt: Database {
+    fn from_path<R, F, P>(fs: R, path: P) -> Result<Self, i32>
+    where
+        R: AsRef<F>,
+        F: FileSystem,
+        P: AsRef<Path>,
+        Self: Sized;
+}
+
+impl<T: Database> DatabaseExt for T {
+    fn from_path<R, F, P>(fs: R, path: P) -> Result<Self, i32>
+    where
+        R: AsRef<F>,
+        F: FileSystem,
+        P: AsRef<Path>,
+        Self: Sized
+    {
+        let data = fs.as_ref().read_file(path.as_ref()).map_err(|e| e as i32)?;
+        Self::from_bytes(data)
+    }
+}
+
 pub trait TableRecord {
-    fn get_value(&self, key: usize) -> Option<&Value>;
-}
-
-pub enum Databases {
-    Sqlite,
-}
-
-impl Databases {
-    pub fn read_from_path(&self, path: &Path) -> Result<impl DatabaseReader, i32> {
-        match self {
-            Databases::Sqlite => Sqlite3BindingsReader::from_path(path),
-        }
-    }
-
-    pub fn read_from_bytes(&self, bytes: &[u8]) -> Result<impl DatabaseReader, i32> {
-        match self {
-            Databases::Sqlite => Sqlite3BindingsReader::from_bytes(bytes),
-        }
-    }
-}
-
-impl AsRef<Databases> for Databases {
-    fn as_ref(&self) -> &Databases {
-        self
-    }
+    fn get_value(&self, key: usize) -> Option<Value>;
 }
