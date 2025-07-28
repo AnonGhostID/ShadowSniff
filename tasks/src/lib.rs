@@ -1,5 +1,4 @@
 #![no_std]
-#![allow(unsafe_op_in_unsafe_fn)]
 
 extern crate alloc;
 
@@ -98,6 +97,24 @@ pub trait Task<C: Collector, F: FileSystem>: Send + Sync {
     fn run(&self, parent: &Path, filesystem: &F, collector: &C);
 }
 
+/// A task that combines and executes multiple subtasks in parallel using system threads.
+///
+/// `CompositeTask` implements the [`Task`] trait and serves as a container for a collection of subtasks,
+/// each of which is executed concurrently in its own thread. This enables parallel processing of
+/// independent units of work, improving efficiency and throughput in data collection or file extraction systems.
+///
+/// Internally, `CompositeTask` uses Windows API functions such as `CreateThread` and `WaitForMultipleObjects`
+/// to run each subtask on a separate OS thread. If there's only a single subtask, it is run directly
+/// on the current thread for performance.
+///
+/// ### Usage
+///
+/// Use the [`composite_task!`] macro to easily construct a `CompositeTask`:
+///
+/// ### Path Management
+///
+/// Each subtask's output path is determined by its `parent_name()` method, which specifies
+/// whether it writes directly to the given `parent` directory or to a subdirectory within it.
 pub struct CompositeTask<C: Collector, F: FileSystem> {
     subtasks: Vec<Arc<dyn Task<C, F>>>,
 }
@@ -177,7 +194,6 @@ struct ThreadParams<'a, C: Collector, F: FileSystem> {
     collector: &'a C,
 }
 
-#[allow(unsafe_op_in_unsafe_fn)]
 unsafe extern "system" fn thread_proc<C: Collector, F: FileSystem>(param: *mut c_void) -> u32 {
     let params = Box::from_raw(param as *mut ThreadParams<C, F>);
 
