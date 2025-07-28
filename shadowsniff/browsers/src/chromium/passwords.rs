@@ -51,18 +51,17 @@ fn extract_password_from_record<R: TableRecord>(
 ) -> Option<Password> {
     let origin = record
         .get_value(LOGINS_ORIGIN_URL)
-        .and_then(|value| value.as_string())
-        .map(|s| s.to_owned());
+        .and_then(|value| value.as_string());
 
     let username = record
         .get_value(LOGINS_USERNAME_VALUE)
-        .and_then(|value| value.as_string())
-        .map(|s| s.to_owned());
+        .and_then(|value| value.as_string());
 
     let password = record
         .get_value(LOGINS_PASSWORD_VALUE)
         .and_then(|value| value.as_blob())
-        .and_then(|blob| unsafe { decrypt_data(blob, browser_data) });
+        .and_then(|blob| unsafe { decrypt_data(&blob, browser_data) })
+        .map(Arc::<str>::from);;
 
     if let (None, None) = (&username, &password) {
         return None;
