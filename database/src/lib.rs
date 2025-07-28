@@ -73,22 +73,73 @@ impl Display for Value {
     }
 }
 
+/// A trait representing a database which can be created from raw bytes.
+///
+/// This trait extends `DatabaseReader` which provides methods to read data from the database.
+///
+/// # Methods
+/// - `from_bytes(bytes: Vec<u8>) -> Result<Self, i32>`: Constructs the database from a vector of bytes.
+///
+/// # Errors
+/// Returns an `Err(i32)` on failure to parse the bytes into a database.
 pub trait Database: DatabaseReader {
+    /// Create a database instance from raw bytes.
+    ///
+    /// # Arguments
+    ///
+    /// * `bytes` - A vector of bytes representing the database content.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(Self)` if the bytes could be parsed into a database,
+    /// otherwise returns an `Err(i32)` error code.
     fn from_bytes(bytes: Vec<u8>) -> Result<Self, i32>
     where
         Self: Sized;
 }
 
+/// A trait for reading data from a database.
+///
+/// Provides an interface to read tables and their records.
+///
+/// # Associated Types
+/// - `Iter`: An iterator over the records in the table.
+/// - `Record`: The record type, must implement `TableRecord`.
 pub trait DatabaseReader {
+    /// The type of iterator returned when reading a table.
     type Iter: Iterator<Item = Self::Record>;
+
+    /// The record type stored in the database tables.
     type Record: TableRecord;
 
+    /// Reads a table by name, returning an iterator over its records if found.
+    ///
+    /// # Arguments
+    ///
+    /// * `table_name` - The name of the table to read.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Some(iterator)` over the records of the table if it exists,
+    /// or `None` if the table could not be found.
     fn read_table<S>(&self, table_name: S) -> Option<Self::Iter>
     where
         S: AsRef<str>;
 }
 
+/// An extension trait for `Database` to provide additional constructors.
 pub trait DatabaseExt: Database {
+    /// Create a database instance from a file path using the given filesystem.
+    ///
+    /// # Arguments
+    ///
+    /// * `fs` - A reference to a filesystem instance that implements `FileSystem`.
+    /// * `path` - The path to the database file.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(Self)` if the file was successfully read and parsed into a database,
+    /// otherwise returns an `Err(i32)` error code.
     fn from_path<R, F, P>(fs: R, path: P) -> Result<Self, i32>
     where
         R: AsRef<F>,
