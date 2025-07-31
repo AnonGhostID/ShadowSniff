@@ -1,8 +1,21 @@
 use core::alloc::{GlobalAlloc, Layout};
-use core::ptr::null_mut;
-use windows_sys::Win32::System::Memory::{GetProcessHeap, HeapAlloc, HeapFree};
+use core::ptr::{null_mut, NonNull};
+use windows_sys::Win32::Foundation::HANDLE;
+use windows_sys::Win32::System::Memory::{GetProcessHeap, HeapAlloc, HeapFree, VirtualAlloc, VirtualFree, MEM_COMMIT, MEM_RELEASE, MEM_RESERVE, PAGE_READWRITE};
 
 pub(crate) struct WinHeapAlloc;
+
+#[cfg(target_arch = "x86")]
+const NATURAL_HEAP_ALIGN: usize = 8;
+#[cfg(target_arch = "x86_64")]
+const NATURAL_HEAP_ALIGN: usize = 16;
+
+#[cfg(target_arch = "x86")]
+const NATURAL_HEAP_ALIGN_WITH_HEADER: usize = 8 + 1;
+#[cfg(target_arch = "x86_64")]
+const NATURAL_HEAP_ALIGN_WITH_HEADER: usize = 16 + 1;
+
+const PAGE_SIZE: usize = 4096;
 
 unsafe impl GlobalAlloc for WinHeapAlloc {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
@@ -11,45 +24,77 @@ unsafe impl GlobalAlloc for WinHeapAlloc {
             return null_mut();
         }
 
+        let size  = layout.size();
         let align = layout.align().max(size_of::<usize>());
-        let size = layout.size();
 
-        let total_size = size
-            .checked_add(align)
-            .and_then(|v| v.checked_add(size_of::<usize>()))
-            .unwrap_or(0);
-        if total_size == 0 {
-            return null_mut();
+        match align {
+            0..=NATURAL_HEAP_ALIGN => {
+                HeapAlloc(heap, 0, size) as *mut u8
+            }
+            NATURAL_HEAP_ALIGN_WITH_HEADER..PAGE_SIZE => {
+                alloc_with_header(heap, size, align)
+            }
+            _ => {
+                VirtualAlloc(
+                    null_mut(),
+                    size,
+                    MEM_COMMIT | MEM_RESERVE,
+                    PAGE_READWRITE,
+                ) as *mut u8
+            }
         }
-
-        let raw_ptr = HeapAlloc(heap, 0, total_size) as *mut u8;
-        if raw_ptr.is_null() {
-            return null_mut();
-        }
-
-        let ptr_addr = raw_ptr.add(size_of::<usize>()) as usize;
-        let aligned_addr = (ptr_addr + align - 1) & !(align - 1);
-        let aligned_ptr = aligned_addr as *mut u8;
-
-        let stored_ptr = (aligned_ptr as *mut usize).offset(-1);
-        stored_ptr.write(raw_ptr as usize);
-
-        aligned_ptr
     }
 
-    unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
-        if ptr.is_null() {
-            return;
-        }
-
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
         let heap = GetProcessHeap();
-        if heap.is_null() {
+        if ptr.is_null() || heap.is_null() {
             return;
         }
 
-        let stored_ptr = (ptr as *mut usize).offset(-1);
-        let raw_ptr = stored_ptr.read() as *mut u8;
+        if layout.align() <= NATURAL_HEAP_ALIGN {
+            HeapFree(heap, 0, ptr as _);
+            return
+        }
 
-        HeapFree(heap, 0, raw_ptr as _);
+        let align = layout.align().max(size_of::<usize>());
+
+        match align {
+            0..=NATURAL_HEAP_ALIGN => {
+                HeapFree(heap, 0, ptr as _);
+            }
+            NATURAL_HEAP_ALIGN_WITH_HEADER..PAGE_SIZE => {
+                let header_ptr = (ptr as usize - size_of::<usize>()) as *const usize;
+                let raw = header_ptr.read() as *mut u8;
+                HeapFree(heap, 0, raw as _);
+            }
+            _ => {
+                VirtualFree(ptr as _, 0, MEM_RELEASE);
+            }
+        }
     }
+}
+
+#[inline]
+unsafe fn alloc_with_header(heap: HANDLE, size: usize, align: usize) -> *mut u8 {
+    let total = size
+        .checked_add(align)
+        .and_then(|v| v.checked_add(size_of::<usize>()))
+        .unwrap_or(0);
+    if total == 0 {
+        return NonNull::<u8>::dangling().as_ptr();
+    }
+
+    let raw = HeapAlloc(heap, 0, total) as *mut u8;
+    if raw.is_null() {
+        return null_mut();
+    }
+
+    let payload = raw.add(size_of::<usize>());
+    let aligned = ((payload as usize + align - 1) & !(align - 1)) as *mut u8;
+
+    debug_assert!((aligned as usize) >= (raw as usize + size_of::<usize>()));
+    debug_assert!((aligned as usize) + size <= (raw as usize) + total);
+
+    ((aligned as *mut usize).offset(-1)).write(raw as usize);
+    aligned
 }
