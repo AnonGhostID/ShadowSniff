@@ -12,3 +12,5 @@ filesystem = { path = "../../filesystem" }
 collector = { path = "../../collector" }
 obfstr = "0.4.4"
 windows-sys = { workspace = true }
+derive-new = "0.7.0"
+indoc = "2.0.6"

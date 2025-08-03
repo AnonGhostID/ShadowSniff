@@ -4,6 +4,7 @@ use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
 use database::TableRecord;
+use derive_new::new;
 use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
@@ -13,14 +14,9 @@ use tasks::{Task, parent_name};
 const DOWNLOADS_CURRENT_PATH: usize = 2;
 const DOWNLOADS_TAB_URL: usize = 16;
 
+#[derive(new)]
 pub(super) struct DownloadsTask {
     browser: Arc<BrowserData>,
-}
-
-impl DownloadsTask {
-    pub(super) fn new(browser: Arc<BrowserData>) -> Self {
-        Self { browser }
-    }
 }
 
 impl<C: Collector, F: FileSystem> Task<C, F> for DownloadsTask {
@@ -47,7 +43,6 @@ impl<C: Collector, F: FileSystem> Task<C, F> for DownloadsTask {
 
 fn extract_download_from_record<R: TableRecord>(record: &R) -> Option<Download> {
     let saved_as = record.get_value(DOWNLOADS_CURRENT_PATH)?.as_string()?;
-
     let url = record.get_value(DOWNLOADS_TAB_URL)?.as_string()?;
 
     Some(Download { saved_as, url })

