@@ -50,7 +50,6 @@ pub fn run() {
 
     SniffTask::default().run(out, &fs, &collector);
 
-    let displayed_collector = format!("{}", PrimitiveDisplayCollector(&collector));
-
-    log_debug!("{displayed_collector}");
+    let _displayed_collector = format!("{}", PrimitiveDisplayCollector(&collector));
+    log_debug!("{_displayed_collector}");
 }

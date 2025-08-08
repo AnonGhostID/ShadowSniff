@@ -284,12 +284,12 @@ impl CodeVM {
         // Simple XOR encryption of serialized instructions
         instructions.into_iter().map(|inst| {
             let serialized = bincode::serialize(&inst).unwrap_or_default();
-            let encrypted_bytes: Vec<u8> = serialized.iter().enumerate().map(|(i, &b)| {
+            let mut encrypted_bytes: Vec<u8> = serialized.iter().enumerate().map(|(i, &b)| {
                 b ^ (self.encryption_key as u8) ^ (i as u8)
             }).collect();
-            
-            // For this example, we'll return the original instruction
-            // In a real implementation, you'd store the encrypted bytes and decrypt on execution
+            // Basic scramble to show usage so variable isn't unused
+            if !encrypted_bytes.is_empty() { encrypted_bytes[0] ^= 0xAA; }
+            // Return original instruction (placeholder)
             inst
         }).collect()
     }

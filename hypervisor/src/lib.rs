@@ -1,14 +1,8 @@
 use std::arch::asm;
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64::__cpuid;
-use windows_sys::Win32::{
-    Foundation::*,
-    System::{
-        Threading::*,
-        SystemInformation::*,
-        Diagnostics::Debug::*,
-    },
-};
+// Removed unused Windows module wildcards to suppress warnings
+// (Removed unused Windows imports to silence warnings)
 use bitflags::bitflags;
 
 bitflags! {
