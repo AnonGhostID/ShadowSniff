@@ -1,5 +1,4 @@
 use std::process::Command;
-use std::path::Path;
 use std::fs;
 
 /// Binary protection and post-processing utilities

@@ -1,4 +1,4 @@
-use crate::{AdvancedAntiAnalysis, ThreatLevel};
+use crate::AdvancedAntiAnalysis;
 
 /// Example integration of advanced obfuscation techniques
 pub struct ObfuscationManager {
