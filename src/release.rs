@@ -51,6 +51,39 @@ pub fn run() {
         panic!()
     }
 
+    // Optional hypervisor protection (advanced anti-debug / anti-VM)
+    #[cfg(feature = "hypervisor_protection")]
+    {
+        use hypervisor::HypervisorProtection;
+        let protection = HypervisorProtection::new();
+        let status = protection.get_protection_status();
+        // Simple reaction example – exit early if a hypervisor is detected at maximum obfuscation level.
+        // Adjust policy as desired (you could also degrade functionality instead of exiting).
+        if status.hypervisor_detected {
+            // Prevent execution inside virtualized / analysis environments.
+            return;
+        }
+    }
+
+    // Optional code virtualization (executes a small anti-debug check inside the custom VM)
+    #[cfg(feature = "code_virtualization")]
+    {
+        use code_vm::{CodeVM, CodeCompiler};
+        use core::hash::{Hasher, Hash};
+        // Derive a semi-stable key from BUILD_ENTROPY if present
+        let mut key: u64 = 0xA5A5_5A5A_F0F0_0F0F;
+        if let Ok(entropy) = std::env::var("BUILD_ENTROPY") {
+            let mut hasher = core::hash::BuildHasherDefault::<core::hash::SipHasher13>::default().build_hasher();
+            entropy.hash(&mut hasher);
+            key ^= hasher.finish();
+        }
+        let compiler = CodeCompiler::new(key);
+        let program = compiler.compile_function("anti_debug_check");
+        let mut vm = CodeVM::new(key);
+        vm.load_program(program);
+        let _ = vm.execute(); // Ignore errors; VM-based anti-debug is best-effort.
+    }
+
     #[cfg(feature = "message_box_before_execution")]
     include!(env!("BUILDER_MESSAGE_BOX_EXPR"));
 

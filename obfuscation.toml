@@ -1,0 +1,93 @@
+# ShadowSniff Obfuscation Configuration
+
+# Obfuscation Levels:
+# - light: Basic optimizations, symbol stripping
+# - medium: + String obfuscation, CFG, ASLR  
+# - heavy: + Control flow obfuscation, layout randomization
+# - maximum: + Anti-debugging, section merging, import hiding
+
+[obfuscation]
+default_level = "medium"
+enable_post_processing = true
+
+[obfuscation.light]
+strip_symbols = true
+optimize_size = true
+remove_debug_info = true
+
+[obfuscation.medium] 
+inherit = "light"
+enable_string_obfuscation = true
+enable_control_flow_guard = true
+enable_aslr = true
+randomize_base_address = true
+
+[obfuscation.heavy]
+inherit = "medium"
+enable_control_flow_obfuscation = true
+randomize_layout = true
+enable_integrity_check = true
+enable_nx_compat = true
+
+[obfuscation.maximum]
+inherit = "heavy"
+enable_anti_debugging = true
+merge_sections = true
+hide_imports = true
+delay_load_dlls = true
+add_fake_sections = true
+
+[post_processing]
+enable_python_obfuscation = true
+enable_upx_packing = false  # Can trigger AV detection
+add_junk_code = true
+scramble_strings = true
+calculate_entropy = true
+
+[build_flags]
+# Custom RUSTFLAGS for each level
+light = [
+    "-Z location-detail=none",
+    "-Z fmt-debug=none", 
+    "-C debuginfo=0"
+]
+
+medium = [
+    "-Z location-detail=none",
+    "-Z fmt-debug=none",
+    "-C debuginfo=0",
+    "-C link-arg=/GUARD:CF",
+    "-C link-arg=/DYNAMICBASE"
+]
+
+heavy = [
+    "-Z location-detail=none",
+    "-Z fmt-debug=none", 
+    "-Z randomize-layout",
+    "-C debuginfo=0",
+    "-C link-arg=/GUARD:CF",
+    "-C link-arg=/DYNAMICBASE",
+    "-C link-arg=/INTEGRITYCHECK",
+    "-C link-arg=/NXCOMPAT"
+]
+
+maximum = [
+    "-Z location-detail=none",
+    "-Z fmt-debug=none",
+    "-Z randomize-layout", 
+    "-C debuginfo=0",
+    "-C link-arg=/GUARD:CF",
+    "-C link-arg=/DYNAMICBASE",
+    "-C link-arg=/INTEGRITYCHECK", 
+    "-C link-arg=/NXCOMPAT",
+    "-C link-arg=/MERGE:.rdata=.text",
+    "-C link-arg=/DELAYLOAD:kernel32.dll",
+    "-C link-arg=/DELAYLOAD:user32.dll"
+]
+
+[warnings]
+# Obfuscation may trigger these warnings
+av_detection = "Heavy obfuscation may trigger antivirus heuristics"
+performance_impact = "Maximum obfuscation will impact runtime performance"
+compatibility = "Some techniques may affect Windows compatibility"
+debugging_difficulty = "Obfuscated binaries are harder to debug"

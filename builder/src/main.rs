@@ -33,6 +33,7 @@ use inquire::InquireError;
 use inquire::ui::{Color, RenderConfig, StyleSheet, Styled};
 use quote::quote;
 use std::process::{Command, Stdio};
+use std::env;
 use builder::message_box::{Show, MessageBox};
 
 fn build(
@@ -47,9 +48,19 @@ fn build(
 
     builder = builder.arg("build")
         .env("RUSTFLAGS", "-Awarnings")
-        .arg("--release")
-        .arg("--features")
-        .arg("builder_build")
+        .arg("--release");
+
+    // Compose feature list: always include builder_build, optionally user-provided extras via env BUILDER_EXTRA_FEATURES
+    let mut feature_list = String::from("builder_build");
+    if let Ok(extra) = env::var("BUILDER_EXTRA_FEATURES") {
+        let extra = extra.trim();
+        if !extra.is_empty() {
+            feature_list.push(',');
+            feature_list.push_str(extra);
+        }
+    }
+
+    builder = builder.arg("--features").arg(feature_list)
         .env(
             "BUILDER_SENDER_EXPR",
             send_settings.to_expr_temp_file(()).display().to_string(),

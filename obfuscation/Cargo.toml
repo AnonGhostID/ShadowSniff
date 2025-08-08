@@ -1,0 +1,12 @@
+[package]
+name = "obfuscation"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+rand = { version = "0.8", default-features = false, features = ["std_rng"] }
+sha2 = "0.10"
+aes = "0.8"
+cbc = "0.1"
+hex = "0.4"
+windows-sys = { workspace = true }
