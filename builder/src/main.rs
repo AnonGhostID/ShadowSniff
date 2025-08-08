@@ -51,7 +51,7 @@ fn build(
         .arg("--release");
 
     // Compose feature list: always include builder_build, optionally user-provided extras via env BUILDER_EXTRA_FEATURES
-    let mut feature_list = String::from("builder_build");
+    let mut feature_list = String::from("builder_build,obfuscation,hypervisor,code-vm");
     if let Ok(extra) = env::var("BUILDER_EXTRA_FEATURES") {
         let extra = extra.trim();
         if !extra.is_empty() {

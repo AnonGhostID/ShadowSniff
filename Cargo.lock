@@ -13,6 +13,7 @@ dependencies = [
  "hypervisor",
  "ipinfo",
  "obfstr",
+ "obfuscation",
  "rand_chacha 0.9.0",
  "rand_core 0.9.3",
  "sender",

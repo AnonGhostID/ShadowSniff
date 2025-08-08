@@ -44,9 +44,13 @@ impl BinaryProtector {
 
     /// Generate random padding data
     pub fn generate_padding(&self, size: usize) -> Vec<u8> {
-        use rand::Rng;
-        let mut rng = rand::thread_rng();
-        (0..size).map(|_| rng.gen::<u8>()).collect()
+        let mut seed = 0xC123_4567_89AB_CDEFu64;
+        let mut out = Vec::with_capacity(size);
+        for _ in 0..size {
+            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
+            out.push((seed >> 56) as u8);
+        }
+        out
     }
 
     /// Calculate file entropy for analysis

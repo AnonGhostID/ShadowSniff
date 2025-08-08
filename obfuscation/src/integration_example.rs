@@ -1,4 +1,4 @@
-use obfuscation::{AdvancedAntiAnalysis, ThreatLevel};
+use crate::{AdvancedAntiAnalysis, ThreatLevel};
 
 /// Example integration of advanced obfuscation techniques
 pub struct ObfuscationManager {
@@ -150,7 +150,7 @@ macro_rules! obfuscated_call {
 
 /// Example usage in main application
 pub fn example_protected_main() {
-    let protection_level = match env!("OBFUSCATION_LEVEL") {
+    let protection_level = match std::env::var("OBFUSCATION_LEVEL").as_deref().unwrap_or("medium") {
         "light" => 1,
         "medium" => 2,
         "heavy" => 3,

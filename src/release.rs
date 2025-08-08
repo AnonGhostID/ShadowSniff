@@ -68,6 +68,14 @@ pub fn run() {
     // Optional code virtualization (executes a small anti-debug check inside the custom VM)
     #[cfg(feature = "code_virtualization")]
     {
+    // Basic obfuscation feature hook (ensures crate is referenced when feature enabled)
+    #[cfg(feature = "obfuscation")]
+    {
+        use obfuscation::ObfuscationLevel;
+        // Select level based on compile-time cfg from build script if present
+        #[allow(unused_variables)]
+        let _obf_level = if cfg!(obfuscation_maximum) { ObfuscationLevel::Maximum } else if cfg!(obfuscation_heavy) { ObfuscationLevel::Heavy } else if cfg!(obfuscation_medium) { ObfuscationLevel::Medium } else { ObfuscationLevel::Light };
+    }
         use code_vm::{CodeVM, CodeCompiler};
         use core::hash::{Hasher, Hash};
         // Derive a semi-stable key from BUILD_ENTROPY if present

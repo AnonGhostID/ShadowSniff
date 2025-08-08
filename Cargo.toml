@@ -5,11 +5,14 @@ edition = "2024"
 license-file = "LICENSE"
 
 [features]
-builder_build = ["obfstr"]
+builder_build = ["dep:obfstr"]
 message_box_before_execution = []
 message_box_after_execution = []
-hypervisor_protection = ["hypervisor"]
-code_virtualization = ["code-vm"]
+hypervisor_protection = ["dep:hypervisor"]
+code_virtualization = ["dep:code-vm"]
+obfuscation = ["dep:obfuscation"]
+hypervisor = ["dep:hypervisor"]
+code-vm = ["dep:code-vm"]
 
 [workspace]
 resolver = "3"
@@ -92,3 +95,4 @@ cfg-if = "1.0.1"
 obfstr = { version = "0.4.4", optional = true }
 hypervisor = { path = "hypervisor", optional = true }
 code-vm = { path = "code-vm", optional = true }
+obfuscation = { path = "obfuscation", optional = true }
