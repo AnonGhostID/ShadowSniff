@@ -18,13 +18,13 @@ pub fn create_fake_calls() {
     unsafe {
         // Create fake call patterns that will confuse disassemblers
         asm!(
-            // Fake call pattern 1: Jump over fake call
-            "jmp 2f",
-            "1: call 3f",  // This call is never executed
-            "2: nop",
-            "jmp 4f",
-            "3: ret",      // Fake function
-            "4:",
+            // Fake call pattern: Jump over fake call
+            "jmp 5f",
+            "call 6f",  // This call is never executed
+            "5: nop",
+            "jmp 7f",
+            "6: ret",      // Fake function
+            "7:",
             options(nomem, nostack)
         );
     }
@@ -149,10 +149,9 @@ impl AntiEmulation {
             asm!(
                 "mov eax, 1",
                 "cpuid",
-                "mov {}, edx",
+                "mov {0:e}, edx",
                 out(reg) features,
                 out("eax") _,
-                out("ebx") _,
                 out("ecx") _,
                 out("edx") _,
             );
@@ -336,7 +335,7 @@ fn get_dynamic_condition() -> u32 {
         let mut value: u32;
         asm!(
             "rdtsc",
-            "mov {}, eax",
+            "mov {0:e}, eax",
             out(reg) value,
             out("eax") _,
             out("edx") _,

@@ -179,48 +179,20 @@ where
     result
 }
 
-/// String interning with obfuscation
-static mut STRING_POOL: Option<alloc::collections::BTreeMap<u64, ObfuscatedString>> = None;
-
-pub fn init_string_pool() {
-    use alloc::collections::BTreeMap;
-    
-    unsafe {
-        STRING_POOL = Some(BTreeMap::new());
-    }
-}
-
-pub fn intern_string(s: &str) -> u64 {
-    use alloc::collections::BTreeMap;
-    
-    // Hash the string
+/// String interning with obfuscation (simplified)
+pub fn intern_string(_s: &str) -> u64 {
+    // Simplified implementation - just hash the string
     let mut hash = 0x811C9DC5u64; // FNV-1a offset
-    for &byte in s.as_bytes() {
+    for &byte in _s.as_bytes() {
         hash ^= byte as u64;
         hash = hash.wrapping_mul(0x100000001B3); // FNV-1a prime
     }
-    
-    unsafe {
-        if let Some(ref mut pool) = STRING_POOL {
-            if !pool.contains_key(&hash) {
-                // Create obfuscated version
-                let data = s.as_bytes();
-                let key = hash;
-                
-                // Store encrypted version
-                let obf_str = ObfuscatedString::new(data, key);
-                pool.insert(hash, obf_str);
-            }
-        }
-    }
-    
     hash
 }
 
-pub fn get_interned_string(id: u64) -> Option<alloc::string::String> {
-    unsafe {
-        STRING_POOL.as_ref()?.get(&id).map(|obf| obf.decrypt())
-    }
+pub fn get_interned_string(_id: u64) -> Option<alloc::string::String> {
+    // Simplified - return None for now
+    None
 }
 
 /// Anti-analysis string techniques

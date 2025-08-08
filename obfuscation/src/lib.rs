@@ -20,7 +20,7 @@ pub mod control_flow;
 pub mod string_obfuscation;
 pub mod runtime_polymorphism;
 pub mod anti_analysis;
-pub mod binary_protection;
+pub mod simple_protection;
 
 // Re-export main obfuscation functions
 pub use anti_debug::*;
@@ -28,7 +28,7 @@ pub use control_flow::*;
 pub use string_obfuscation::*;
 pub use runtime_polymorphism::*;
 pub use anti_analysis::*;
-pub use binary_protection::*;
+pub use simple_protection::*;
 
 /// Initialize all obfuscation layers
 pub fn init_obfuscation() -> bool {

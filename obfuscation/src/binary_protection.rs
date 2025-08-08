@@ -3,6 +3,7 @@
  */
 
 use core::arch::asm;
+use alloc::boxed::Box;
 
 /// Binary packing and encryption functionality
 pub struct BinaryPacker {
@@ -304,17 +305,18 @@ fn generate_random_bytes(buffer: &mut [u8]) {
 
 /// Polymorphic loader
 pub struct PolymorphicLoader {
-    variants: [fn(*const u8, usize); 4],
+    variants: [Box<dyn Fn(*const u8, usize)>; 4],
 }
 
 impl PolymorphicLoader {
     pub fn new() -> Self {
+        use alloc::boxed::Box;
         Self {
             variants: [
-                Self::load_variant_a,
-                Self::load_variant_b,
-                Self::load_variant_c,
-                Self::load_variant_d,
+                Box::new(|data, size| unsafe { Self::load_variant_a(data, size) }),
+                Box::new(|data, size| unsafe { Self::load_variant_b(data, size) }),
+                Box::new(|data, size| unsafe { Self::load_variant_c(data, size) }),
+                Box::new(|data, size| unsafe { Self::load_variant_d(data, size) }),
             ],
         }
     }
@@ -323,7 +325,7 @@ impl PolymorphicLoader {
         let mut variant_index: u32;
         asm!(
             "rdtsc",
-            "mov {}, eax",
+            "mov {0:e}, eax",
             out(reg) variant_index,
             out("eax") _,
             out("edx") _,
@@ -334,32 +336,40 @@ impl PolymorphicLoader {
     }
     
     unsafe fn load_variant_a(data: *const u8, size: usize) {
-        // Simple load
-        let _ = core::slice::from_raw_parts(data, size);
+        unsafe {
+            // Simple load
+            let _ = core::slice::from_raw_parts(data, size);
+        }
     }
     
     unsafe fn load_variant_b(data: *const u8, size: usize) {
-        // Load with noise
-        asm!("nop", options(nomem, nostack));
-        let _ = core::slice::from_raw_parts(data, size);
-        asm!("nop", options(nomem, nostack));
+        unsafe {
+            // Load with noise
+            asm!("nop", options(nomem, nostack));
+            let _ = core::slice::from_raw_parts(data, size);
+            asm!("nop", options(nomem, nostack));
+        }
     }
     
     unsafe fn load_variant_c(data: *const u8, size: usize) {
-        // Load with complex noise
-        asm!(
-            "push eax",
-            "xor eax, eax",
-            "pop eax",
-            out("eax") _,
-            options(nomem)
-        );
-        let _ = core::slice::from_raw_parts(data, size);
+        unsafe {
+            // Load with complex noise
+            asm!(
+                "push eax",
+                "xor eax, eax",
+                "pop eax",
+                out("eax") _,
+                options(nomem)
+            );
+            let _ = core::slice::from_raw_parts(data, size);
+        }
     }
     
     unsafe fn load_variant_d(data: *const u8, size: usize) {
-        // Load with maximum obfuscation
-        Self::load_variant_a(data, size);
-        Self::load_variant_b(data, size);
+        unsafe {
+            // Load with maximum obfuscation
+            Self::load_variant_a(data, size);
+            Self::load_variant_b(data, size);
+        }
     }
 }

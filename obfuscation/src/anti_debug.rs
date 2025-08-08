@@ -141,7 +141,6 @@ pub fn check_virtual_machine() -> bool {
     unsafe {
         // Check CPUID for hypervisor bit
         let mut eax: u32 = 1;
-        let mut ebx: u32;
         let mut ecx: u32; 
         let mut edx: u32;
         
@@ -150,7 +149,6 @@ pub fn check_virtual_machine() -> bool {
             inout("eax") eax,
             out("ecx") ecx,
             out("edx") edx,
-            lateout("ebx") ebx,
         );
         
         // Check hypervisor present bit (bit 31 of ECX)
