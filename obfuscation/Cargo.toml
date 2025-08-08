@@ -1,0 +1,23 @@
+[package]
+name = "obfuscation"
+version = "2.1.0"
+edition = "2024"
+
+[dependencies]
+# Enhanced string obfuscation
+obfstr = "0.4.4"
+# For runtime polymorphism and code mutation
+rand = { version = "0.8.5", default-features = false, features = ["small_rng"] }
+rand_chacha = { version = "0.3.1", default-features = false }
+# For anti-debugging
+windows-sys = { workspace = true }
+# For control flow obfuscation helpers
+cfg-if = "1.0.1"
+
+[features]
+default = ["anti-debug", "control-flow-obfuscation", "string-encryption", "runtime-polymorphism"]
+anti-debug = []
+control-flow-obfuscation = []
+string-encryption = []
+runtime-polymorphism = []
+anti-disassembly = []
